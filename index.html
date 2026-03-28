@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BullSpace AI — USF Smart Library</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; min-height: 100vh; }
+  .header { background: #006747; color: #fff; padding: 16px 24px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+  .bull { width: 42px; height: 42px; background: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .brand { font-size: 20px; font-weight: 700; }
+  .sub { font-size: 12px; opacity: .8; margin-top: 2px; }
+  .status-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; margin-left: auto; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+  .login-screen { max-width: 420px; margin: 60px auto; background: #fff; border-radius: 16px; padding: 32px; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+  .login-screen h2 { font-size: 22px; color: #006747; margin-bottom: 6px; }
+  .login-screen p { font-size: 14px; color: #666; margin-bottom: 24px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: #444; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+  .field input { width: 100%; padding: 11px 14px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; transition: border-color .2s; }
+  .field input:focus { border-color: #006747; }
+  .btn-green { width: 100%; padding: 12px; background: #006747; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background .2s; }
+  .btn-green:hover { background: #005538; }
+  .err { font-size: 12px; color: #dc2626; margin-top: 8px; display: none; }
+  .app-screen { display: none; height: 100vh; flex-direction: column; }
+  .chat-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .msg { max-width: 75%; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+  .msg.user { background: #006747; color: #fff; border-radius: 16px 16px 4px 16px; align-self: flex-end; }
+  .msg.bot { background: #fff; color: #222; border-radius: 16px 16px 16px 4px; align-self: flex-start; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+  .msg.bot.typing { color: #999; font-style: italic; }
+  .input-bar { background: #fff; border-top: 1px solid #eee; padding: 14px 20px; display: flex; gap: 10px; }
+  .input-bar input { flex: 1; padding: 11px 16px; border: 1.5px solid #ddd; border-radius: 24px; font-size: 14px; outline: none; transition: border-color .2s; }
+  .input-bar input:focus { border-color: #006747; }
+  .send-btn { padding: 11px 22px; background: #006747; color: #fff; border: none; border-radius: 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .2s; }
+  .send-btn:hover { background: #005538; }
+  .send-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .user-bar { background: #006747; color: #fff; padding: 8px 20px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+  .user-bar span { opacity: .8; }
+  .suggestions { display: flex; gap: 8px; padding: 10px 20px; overflow-x: auto; background: #fff; border-bottom: 1px solid #eee; flex-wrap: wrap; }
+  .sug { padding: 6px 14px; background: #f0faf5; border: 1.5px solid #006747; border-radius: 20px; font-size: 12px; color: #006747; cursor: pointer; white-space: nowrap; font-weight: 500; transition: all .2s; }
+  .sug:hover { background: #006747; color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="bull">🐂</div>
+  <div>
+    <div class="brand">BullSpace AI</div>
+    <div class="sub">USF Tampa Campus Library</div>
+  </div>
+  <div class="status-dot"></div>
+</div>
+
+<div class="login-screen" id="loginScreen">
+  <h2>Welcome to BullSpace AI</h2>
+  <p>Sign in with your USF Student ID to find your perfect study spot.</p>
+  <div class="field">
+    <label>Student ID</label>
+    <input type="text" id="sidInput" placeholder="U12345678" maxlength="10">
+  </div>
+  <div class="field">
+    <label>Full Name</label>
+    <input type="text" id="nameInput" placeholder="Your name" maxlength="40">
+  </div>
+  <div class="err" id="loginErr">Please enter a valid Student ID (U + 8 digits) and your name.</div>
+  <button class="btn-green" onclick="login()">Find My Study Space →</button>
+</div>
+
+<div class="app-screen" id="appScreen">
+  <div class="user-bar">
+    <span>Signed in as:</span>
+    <strong id="userLabel"></strong>
+    <button onclick="logout()" style="margin-left:auto;background:none;border:1px solid rgba(255,255,255,.4);color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;cursor:pointer">Sign out</button>
+  </div>
+  <div class="suggestions">
+    <div class="sug" onclick="sendSug('Find me a quiet seat with a charger')">🤫 Quiet seat + charger</div>
+    <div class="sug" onclick="sendSug('I need a group table for 4 people')">👥 Group table for 4</div>
+    <div class="sug" onclick="sendSug('Find me a computer station')">💻 Computer station</div>
+    <div class="sug" onclick="sendSug('Where can I get coffee?')">☕ Coffee nearby?</div>
+    <div class="sug" onclick="sendSug('What are the library hours today?')">🕐 Library hours</div>
+    <div class="sug" onclick="sendSug('Find me a seat on the 5th floor')">📚 5th floor seat</div>
+  </div>
+  <div class="chat-area" id="chatArea">
+    <div class="msg bot">👋 Hey! I'm BullSpace AI. Tell me what kind of study space you need and I'll find the perfect spot for you in the USF Tampa Library!</div>
+  </div>
+  <div class="input-bar">
+    <input type="text" id="msgInput" placeholder="Ask me anything about the library..." onkeydown="if(event.key==='Enter')sendMsg()">
+    <button class="send-btn" id="sendBtn" onclick="sendMsg()">Send</button>
+  </div>
+</div>
+
+<script>
+let studentId = "";
+let studentName = "";
+
+function login() {
+  const sid = document.getElementById('sidInput').value.trim();
+  const name = document.getElementById('nameInput').value.trim();
+  if (!/^U\d{8}$/.test(sid) || !name) {
+    document.getElementById('loginErr').style.display = 'block';
+    return;
+  }
+  studentId = sid;
+  studentName = name;
+  document.getElementById('loginErr').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'flex';
+  document.getElementById('userLabel').textContent = name + ' (' + sid + ')';
+}
+
+function logout() {
+  studentId = ""; studentName = "";
+  document.getElementById('loginScreen').style.display = 'block';
+  document.getElementById('appScreen').style.display = 'none';
+  document.getElementById('sidInput').value = '';
+  document.getElementById('nameInput').value = '';
+  document.getElementById('chatArea').innerHTML = '<div class="msg bot">👋 Hey! I\'m BullSpace AI. Tell me what kind of study space you need and I\'ll find the perfect spot for you in the USF Tampa Library!</div>';
+}
+
+function addMsg(text, type) {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'msg ' + type;
+  div.textContent = text;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+  return div;
+}
+
+async function sendMsg() {
+  const input = document.getElementById('msgInput');
+  const btn = document.getElementById('sendBtn');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  btn.disabled = true;
+  addMsg(text, 'user');
+  const typing = addMsg('BullSpace AI is thinking...', 'bot typing');
+
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ student_id: studentId, message: text })
+    });
+    const data = await res.json();
+    typing.remove();
+    addMsg(data.response, 'bot');
+  } catch (e) {
+    typing.remove();
+    addMsg('Sorry, something went wrong. Please try again.', 'bot');
+  }
+
+  btn.disabled = false;
+  input.focus();
+}
+
+function sendSug(text) {
+  document.getElementById('msgInput').value = text;
+  sendMsg();
+}
+</script>
+</body>
+</html>
