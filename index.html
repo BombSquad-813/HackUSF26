@@ -752,7 +752,7 @@ function login(){
   document.getElementById('gridBg').style.display='none';
   document.getElementById('appGrid').style.display='block';
   document.getElementById('userLbl').textContent=acct.name+' ('+sid+')';
-  initOcc().then(()=>{renderDashboard();renderFloorTabs();renderMap(curFloor);});
+  initOcc();renderDashboard();renderFloorTabs();renderMap(curFloor);
   renderReservations();renderTutoring();renderGroups();renderHistory();
 }
 function logout(){
