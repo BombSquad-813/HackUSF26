@@ -6,127 +6,497 @@
 <title>BullSpace AI — USF Smart Library</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; min-height: 100vh; }
-  .header { background: #006747; color: #fff; padding: 16px 24px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
-  .bull { width: 42px; height: 42px; background: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-  .brand { font-size: 20px; font-weight: 700; }
-  .sub { font-size: 12px; opacity: .8; margin-top: 2px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; min-height: 100vh; }
+  .header { background: #006747; color: #fff; padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
+  .bull { width: 38px; height: 38px; background: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .brand { font-size: 18px; font-weight: 700; }
+  .sub { font-size: 11px; opacity: .8; }
   .status-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; margin-left: auto; animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
-  .login-screen { max-width: 420px; margin: 60px auto; background: #fff; border-radius: 16px; padding: 32px; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
-  .login-screen h2 { font-size: 22px; color: #006747; margin-bottom: 6px; }
-  .login-screen p { font-size: 14px; color: #666; margin-bottom: 24px; }
-  .field { margin-bottom: 16px; }
-  .field label { display: block; font-size: 12px; font-weight: 600; color: #444; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
-  .field input { width: 100%; padding: 11px 14px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; transition: border-color .2s; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .login-wrap { max-width: 400px; margin: 50px auto; background: #fff; border-radius: 16px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,.1); }
+  .login-wrap h2 { color: #006747; font-size: 20px; margin-bottom: 6px; }
+  .login-wrap p { font-size: 13px; color: #666; margin-bottom: 20px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 11px; font-weight: 700; color: #444; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
+  .field input { width: 100%; padding: 10px 13px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
   .field input:focus { border-color: #006747; }
-  .btn-green { width: 100%; padding: 12px; background: #006747; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background .2s; }
-  .btn-green:hover { background: #005538; }
-  .err { font-size: 12px; color: #dc2626; margin-top: 8px; display: none; }
-  .app-screen { display: none; height: 100vh; flex-direction: column; }
-  .chat-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
-  .msg { max-width: 75%; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+  .btn { width: 100%; padding: 11px; background: #006747; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn:hover { background: #005538; }
+  .btn.sm { width: auto; padding: 7px 16px; font-size: 12px; }
+  .btn.red { background: #dc2626; }
+  .btn.red:hover { background: #b91c1c; }
+  .btn.amber { background: #d97706; }
+  .btn.amber:hover { background: #b45309; }
+  .err { font-size: 12px; color: #dc2626; margin-top: 6px; display: none; }
+  .app { display: none; }
+  .user-bar { background: #005538; color: #fff; padding: 8px 20px; font-size: 12px; display: flex; align-items: center; gap: 10px; }
+  .user-bar button { margin-left: auto; background: none; border: 1px solid rgba(255,255,255,.4); color: #fff; padding: 3px 10px; border-radius: 10px; font-size: 11px; cursor: pointer; }
+  .nav-tabs { display: flex; background: #fff; border-bottom: 2px solid #e5e7eb; padding: 0 20px; }
+  .tab { padding: 12px 18px; font-size: 13px; font-weight: 600; color: #666; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all .2s; }
+  .tab.on { color: #006747; border-color: #006747; }
+  .panel { display: none; padding: 20px; }
+  .panel.on { display: block; }
+
+  /* Dashboard */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: #fff; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .stat-card .num { font-size: 28px; font-weight: 700; }
+  .stat-card .num.green { color: #006747; }
+  .stat-card .num.red { color: #dc2626; }
+  .stat-card .num.amber { color: #d97706; }
+  .stat-card .lbl { font-size: 11px; color: #888; margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
+  .floor-bars { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .floor-bars h3 { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 14px; }
+  .floor-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .floor-name { font-size: 12px; color: #444; width: 80px; flex-shrink: 0; }
+  .bar-wrap { flex: 1; height: 10px; background: #e5e7eb; border-radius: 5px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 5px; transition: width 1s; }
+  .bar-pct { font-size: 11px; color: #888; width: 36px; text-align: right; flex-shrink: 0; }
+  .noise-badge { font-size: 10px; padding: 2px 7px; border-radius: 8px; flex-shrink: 0; }
+  .noise-quiet { background: #ede9fe; color: #5b21b6; }
+  .noise-low { background: #d1fae5; color: #065f46; }
+  .noise-mod { background: #fef3c7; color: #92400e; }
+  .noise-cas { background: #dbeafe; color: #1e40af; }
+
+  /* Seat Map */
+  .floor-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .ftab { padding: 6px 14px; font-size: 12px; font-weight: 600; border: 2px solid #ddd; border-radius: 20px; cursor: pointer; background: #fff; color: #666; transition: all .2s; }
+  .ftab.on { background: #006747; color: #fff; border-color: #006747; }
+  .legend { display: flex; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+  .leg { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #555; }
+  .leg-dot { width: 14px; height: 14px; border-radius: 4px; }
+  .leg-dot.av { background: #006747; }
+  .leg-dot.oc { background: #dc2626; }
+  .leg-dot.sel { background: #d97706; border: 2px solid #92400e; }
+  .map-container { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.06); margin-bottom: 16px; }
+  .zone-label { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px; margin-top: 16px; }
+  .zone-label:first-child { margin-top: 0; }
+  .seats-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+  .seat-btn { width: 56px; height: 52px; border-radius: 8px; border: 2px solid transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 9px; font-weight: 700; transition: all .15s; position: relative; }
+  .seat-btn.av { background: #d1fae5; border-color: #006747; color: #065f46; }
+  .seat-btn.av:hover { transform: scale(1.1); box-shadow: 0 4px 12px rgba(0,103,71,.3); }
+  .seat-btn.oc { background: #fee2e2; border-color: #dc2626; color: #991b1b; cursor: not-allowed; }
+  .seat-btn.mine { background: #fef3c7; border-color: #d97706; color: #92400e; }
+  .seat-btn.sel { transform: scale(1.12); box-shadow: 0 0 0 3px #006747; }
+  .seat-icon { font-size: 16px; line-height: 1; }
+  .seat-id { font-size: 8px; margin-top: 2px; }
+  .seat-detail { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .seat-detail h3 { font-size: 16px; font-weight: 700; color: #333; margin-bottom: 4px; }
+  .seat-detail .floor-sub { font-size: 12px; color: #888; margin-bottom: 14px; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .detail-item { background: #f9fafb; border-radius: 8px; padding: 10px; }
+  .detail-item .dl { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; }
+  .detail-item .dv { font-size: 13px; font-weight: 600; color: #333; }
+  .action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .placeholder-detail { text-align: center; padding: 30px; color: #aaa; font-size: 13px; }
+
+  /* Reservations */
+  .res-list { display: flex; flex-direction: column; gap: 12px; }
+  .res-card { background: #fff; border-radius: 12px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .res-card .rh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 6px; }
+  .res-card .rid { font-size: 15px; font-weight: 700; color: #333; }
+  .res-card .rfloor { font-size: 12px; color: #888; }
+  .timer-wrap { margin-bottom: 10px; }
+  .timer-labels { display: flex; justify-content: space-between; font-size: 11px; color: #888; margin-bottom: 4px; }
+  .timer-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+  .timer-fill { height: 100%; border-radius: 4px; transition: width .5s, background .5s; }
+  .res-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .empty-res { text-align: center; padding: 40px; color: #aaa; font-size: 14px; background: #fff; border-radius: 12px; }
+
+  /* Chat */
+  .chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 200px); }
+  .suggestions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .sug { padding: 6px 14px; background: #d1fae5; border: 1.5px solid #006747; border-radius: 20px; font-size: 12px; color: #006747; cursor: pointer; font-weight: 600; transition: all .2s; }
+  .sug:hover { background: #006747; color: #fff; }
+  .chat-area { flex: 1; overflow-y: auto; background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06); display: flex; flex-direction: column; gap: 12px; min-height: 200px; }
+  .msg { max-width: 78%; padding: 11px 15px; border-radius: 16px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
   .msg.user { background: #006747; color: #fff; border-radius: 16px 16px 4px 16px; align-self: flex-end; }
-  .msg.bot { background: #fff; color: #222; border-radius: 16px 16px 16px 4px; align-self: flex-start; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
-  .msg.bot.typing { color: #999; font-style: italic; }
-  .input-bar { background: #fff; border-top: 1px solid #eee; padding: 14px 20px; display: flex; gap: 10px; }
-  .input-bar input { flex: 1; padding: 11px 16px; border: 1.5px solid #ddd; border-radius: 24px; font-size: 14px; outline: none; transition: border-color .2s; }
-  .input-bar input:focus { border-color: #006747; }
-  .send-btn { padding: 11px 22px; background: #006747; color: #fff; border: none; border-radius: 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .2s; }
+  .msg.bot { background: #f3f4f6; color: #222; border-radius: 16px 16px 16px 4px; align-self: flex-start; }
+  .msg.typing { color: #999; font-style: italic; }
+  .input-row { display: flex; gap: 8px; }
+  .input-row input { flex: 1; padding: 11px 16px; border: 1.5px solid #ddd; border-radius: 24px; font-size: 13px; outline: none; }
+  .input-row input:focus { border-color: #006747; }
+  .send-btn { padding: 11px 22px; background: #006747; color: #fff; border: none; border-radius: 24px; font-size: 13px; font-weight: 600; cursor: pointer; }
   .send-btn:hover { background: #005538; }
   .send-btn:disabled { opacity: .5; cursor: not-allowed; }
-  .user-bar { background: #006747; color: #fff; padding: 8px 20px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
-  .user-bar span { opacity: .8; }
-  .suggestions { display: flex; gap: 8px; padding: 10px 20px; overflow-x: auto; background: #fff; border-bottom: 1px solid #eee; flex-wrap: wrap; }
-  .sug { padding: 6px 14px; background: #f0faf5; border: 1.5px solid #006747; border-radius: 20px; font-size: 12px; color: #006747; cursor: pointer; white-space: nowrap; font-weight: 500; transition: all .2s; }
-  .sug:hover { background: #006747; color: #fff; }
+
+  .pill { font-size: 11px; padding: 3px 9px; border-radius: 10px; font-weight: 600; }
+  .pill.av { background: #d1fae5; color: #065f46; }
+  .pill.oc { background: #fee2e2; color: #991b1b; }
+  .pill.mine { background: #fef3c7; color: #92400e; }
+
+  @media(max-width:600px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .detail-grid { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
 
 <div class="header">
   <div class="bull">🐂</div>
-  <div>
-    <div class="brand">BullSpace AI</div>
-    <div class="sub">USF Tampa Campus Library</div>
-  </div>
+  <div><div class="brand">BullSpace AI</div><div class="sub">USF Tampa Campus Library</div></div>
   <div class="status-dot"></div>
 </div>
 
-<div class="login-screen" id="loginScreen">
+<!-- LOGIN -->
+<div class="login-wrap" id="loginScreen">
   <h2>Welcome to BullSpace AI</h2>
   <p>Sign in with your USF Student ID to find your perfect study spot.</p>
-  <div class="field">
-    <label>Student ID</label>
-    <input type="text" id="sidInput" placeholder="U12345678" maxlength="10">
-  </div>
-  <div class="field">
-    <label>Full Name</label>
-    <input type="text" id="nameInput" placeholder="Your name" maxlength="40">
-  </div>
+  <div class="field"><label>Student ID</label><input type="text" id="sidInput" placeholder="U12345678" maxlength="10"></div>
+  <div class="field"><label>Full Name</label><input type="text" id="nameInput" placeholder="Your name" maxlength="40"></div>
   <div class="err" id="loginErr">Please enter a valid Student ID (U + 8 digits) and your name.</div>
-  <button class="btn-green" onclick="login()">Find My Study Space →</button>
+  <button class="btn" onclick="login()">Find My Study Space →</button>
 </div>
 
-<div class="app-screen" id="appScreen">
+<!-- APP -->
+<div class="app" id="appScreen">
   <div class="user-bar">
-    <span>Signed in as:</span>
-    <strong id="userLabel"></strong>
-    <button onclick="logout()" style="margin-left:auto;background:none;border:1px solid rgba(255,255,255,.4);color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;cursor:pointer">Sign out</button>
+    <span>Signed in as:</span><strong id="userLabel"></strong>
+    <button onclick="logout()">Sign out</button>
   </div>
-  <div class="suggestions">
-    <div class="sug" onclick="sendSug('Find me a quiet seat with a charger')">🤫 Quiet seat + charger</div>
-    <div class="sug" onclick="sendSug('I need a group table for 4 people')">👥 Group table for 4</div>
-    <div class="sug" onclick="sendSug('Find me a computer station')">💻 Computer station</div>
-    <div class="sug" onclick="sendSug('Where can I get coffee?')">☕ Coffee nearby?</div>
-    <div class="sug" onclick="sendSug('What are the library hours today?')">🕐 Library hours</div>
-    <div class="sug" onclick="sendSug('Find me a seat on the 5th floor')">📚 5th floor seat</div>
+
+  <div class="nav-tabs">
+    <div class="tab on" onclick="showPanel('dashboard',this)">📊 Dashboard</div>
+    <div class="tab" onclick="showPanel('seatmap',this)">🗺 Seat Map</div>
+    <div class="tab" onclick="showPanel('reservations',this)">🎫 My Reservations</div>
+    <div class="tab" onclick="showPanel('chat',this)">💬 AI Chat</div>
   </div>
-  <div class="chat-area" id="chatArea">
-    <div class="msg bot">👋 Hey! I'm BullSpace AI. Tell me what kind of study space you need and I'll find the perfect spot for you in the USF Tampa Library!</div>
+
+  <!-- DASHBOARD -->
+  <div class="panel on" id="dashboard">
+    <div class="stats-grid" id="statsGrid"></div>
+    <div class="floor-bars">
+      <h3>Floor occupancy</h3>
+      <div id="floorBars"></div>
+    </div>
   </div>
-  <div class="input-bar">
-    <input type="text" id="msgInput" placeholder="Ask me anything about the library..." onkeydown="if(event.key==='Enter')sendMsg()">
-    <button class="send-btn" id="sendBtn" onclick="sendMsg()">Send</button>
+
+  <!-- SEAT MAP -->
+  <div class="panel" id="seatmap">
+    <div class="floor-tabs" id="floorTabs"></div>
+    <div class="legend">
+      <div class="leg"><div class="leg-dot av"></div>Available</div>
+      <div class="leg"><div class="leg-dot oc"></div>Occupied</div>
+      <div class="leg"><div class="leg-dot mine"></div>Your seat</div>
+    </div>
+    <div class="map-container" id="mapContainer"></div>
+    <div class="seat-detail" id="seatDetail"><div class="placeholder-detail">Click a green seat to see details and reserve it.</div></div>
+  </div>
+
+  <!-- RESERVATIONS -->
+  <div class="panel" id="reservations">
+    <div class="res-list" id="resList"></div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="panel" id="chat">
+    <div class="chat-wrap">
+      <div class="suggestions">
+        <div class="sug" onclick="sendSug('Find me a quiet seat with a charger')">🤫 Quiet + charger</div>
+        <div class="sug" onclick="sendSug('I need a group table for 4 people')">👥 Group table</div>
+        <div class="sug" onclick="sendSug('Find me a computer station')">💻 Computer</div>
+        <div class="sug" onclick="sendSug('Where can I get coffee?')">☕ Coffee</div>
+        <div class="sug" onclick="sendSug('What are the library hours today?')">🕐 Hours</div>
+      </div>
+      <div class="chat-area" id="chatArea">
+        <div class="msg bot">👋 Hey! I'm BullSpace AI. Tell me what kind of study space you need!</div>
+      </div>
+      <div class="input-row">
+        <input type="text" id="msgInput" placeholder="Ask me anything about the library..." onkeydown="if(event.key==='Enter')sendMsg()">
+        <button class="send-btn" id="sendBtn" onclick="sendMsg()">Send</button>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
-let studentId = "";
-let studentName = "";
+const FLOORS = {
+  "1st Floor": { noise: "casual", nc: "noise-cas", seats: [
+    {id:"1-LC01",type:"table",zone:"Learning Commons",cap:4,charger:true},
+    {id:"1-LC02",type:"table",zone:"Learning Commons",cap:4,charger:true},
+    {id:"1-LC03",type:"table",zone:"Learning Commons",cap:4,charger:false},
+    {id:"1-CL01",type:"computer",zone:"Computer Lab",cap:1,charger:true},
+    {id:"1-CL02",type:"computer",zone:"Computer Lab",cap:1,charger:true},
+    {id:"1-CL03",type:"computer",zone:"Computer Lab",cap:1,charger:true},
+    {id:"1-VL01",type:"station",zone:"VizLab",cap:1,charger:true},
+    {id:"1-VL02",type:"station",zone:"VizLab",cap:1,charger:true},
+  ]},
+  "2nd Floor": { noise: "moderate", nc: "noise-mod", seats: [
+    {id:"2-LC01",type:"carrel",zone:"Learning Commons",cap:1,charger:true},
+    {id:"2-LC02",type:"carrel",zone:"Learning Commons",cap:1,charger:false},
+    {id:"2-LC03",type:"carrel",zone:"Learning Commons",cap:1,charger:true},
+    {id:"2-SL01",type:"computer",zone:"Smart Lab",cap:1,charger:true},
+    {id:"2-SL02",type:"computer",zone:"Smart Lab",cap:1,charger:true},
+    {id:"2-TH01",type:"table",zone:"Tutoring Hub",cap:6,charger:true},
+    {id:"2-TH02",type:"table",zone:"Tutoring Hub",cap:6,charger:false},
+    {id:"2-WC01",type:"table",zone:"Writing Center",cap:4,charger:false},
+  ]},
+  "3rd Floor": { noise: "low-moderate", nc: "noise-low", seats: [
+    {id:"3-W305",type:"carrel",zone:"West Carrels",cap:1,charger:false},
+    {id:"3-W306",type:"carrel",zone:"West Carrels",cap:1,charger:true},
+    {id:"3-W318",type:"carrel",zone:"West Carrels",cap:1,charger:false},
+    {id:"3-E335",type:"carrel",zone:"East Carrels",cap:1,charger:false},
+    {id:"3-E357",type:"carrel",zone:"East Carrels",cap:1,charger:true},
+    {id:"3-OT01",type:"table",zone:"Open Reading Tables",cap:4,charger:true},
+    {id:"3-OT02",type:"table",zone:"Open Reading Tables",cap:4,charger:false},
+  ]},
+  "4th Floor": { noise: "low-moderate", nc: "noise-low", seats: [
+    {id:"4-W440",type:"carrel",zone:"West Carrels",cap:1,charger:false},
+    {id:"4-W441",type:"carrel",zone:"West Carrels",cap:1,charger:true},
+    {id:"4-E426",type:"carrel",zone:"East Carrels",cap:1,charger:false},
+    {id:"4-E437",type:"carrel",zone:"East Carrels",cap:1,charger:true},
+    {id:"4-SC01",type:"table",zone:"Special Collections",cap:6,charger:false},
+    {id:"4-SC02",type:"table",zone:"Special Collections",cap:6,charger:false},
+  ]},
+  "5th Floor": { noise: "quiet", nc: "noise-quiet", seats: [
+    {id:"5-520A",type:"room",zone:"Reading Room West",cap:6,charger:true},
+    {id:"5-520B",type:"room",zone:"Reading Room West",cap:6,charger:true},
+    {id:"5-520C",type:"room",zone:"Reading Room West",cap:6,charger:true},
+    {id:"5-514A",type:"room",zone:"Reading Room East",cap:6,charger:true},
+    {id:"5-514B",type:"room",zone:"Reading Room East",cap:6,charger:true},
+    {id:"5-GR01",type:"table",zone:"Graduate Reading Room",cap:1,charger:true},
+    {id:"5-GR02",type:"table",zone:"Graduate Reading Room",cap:1,charger:true},
+    {id:"5-OC01",type:"carrel",zone:"Open Stacks",cap:1,charger:false},
+    {id:"5-OC02",type:"carrel",zone:"Open Stacks",cap:1,charger:false},
+  ]},
+  "6th Floor": { noise: "moderate", nc: "noise-mod", seats: [
+    {id:"6-BA01",type:"table",zone:"Bellini AI College",cap:4,charger:true},
+    {id:"6-BA02",type:"table",zone:"Bellini AI College",cap:4,charger:false},
+    {id:"6-CR01",type:"room",zone:"Conference Room LIB645",cap:12,charger:true},
+  ]},
+};
+
+const ICONS = {carrel:"📖",table:"📋",computer:"💻",station:"🖥️",room:"🚪"};
+const SESSION_MS = 2 * 60 * 60 * 1000;
+const EXTEND_MS  = 30 * 60 * 1000;
+
+let user = null;
+let occupancy = {};
+let reservations = {};
+let selSeat = null;
+let curFloor = "1st Floor";
+let ticker = null;
+
+function randomOcc() { return Math.random() < 0.35; }
+
+function initOccupancy() {
+  Object.values(FLOORS).forEach(f => {
+    f.seats.forEach(s => {
+      if (!occupancy[s.id]) occupancy[s.id] = randomOcc();
+    });
+  });
+}
+
+function getSeatState(id) {
+  if (reservations[id]) {
+    if (Date.now() > reservations[id].exp) { delete reservations[id]; return 'av'; }
+    if (reservations[id].uid === user.id) return 'mine';
+    return 'oc';
+  }
+  return occupancy[id] ? 'oc' : 'av';
+}
 
 function login() {
   const sid = document.getElementById('sidInput').value.trim();
-  const name = document.getElementById('nameInput').value.trim();
-  if (!/^U\d{8}$/.test(sid) || !name) {
-    document.getElementById('loginErr').style.display = 'block';
-    return;
-  }
-  studentId = sid;
-  studentName = name;
+  const nm  = document.getElementById('nameInput').value.trim();
+  if (!/^U\d{8}$/.test(sid) || !nm) { document.getElementById('loginErr').style.display='block'; return; }
+  user = {id: sid, name: nm};
   document.getElementById('loginErr').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('appScreen').style.display = 'flex';
-  document.getElementById('userLabel').textContent = name + ' (' + sid + ')';
+  document.getElementById('appScreen').style.display = 'block';
+  document.getElementById('userLabel').textContent = nm + ' (' + sid + ')';
+  initOccupancy();
+  renderDashboard();
+  renderFloorTabs();
+  renderMap(curFloor);
+  renderReservations();
+  ticker = setInterval(() => { renderDashboard(); renderMap(curFloor); renderReservations(); }, 30000);
 }
 
 function logout() {
-  studentId = ""; studentName = "";
+  clearInterval(ticker);
+  user = null; occupancy = {}; reservations = {}; selSeat = null;
   document.getElementById('loginScreen').style.display = 'block';
   document.getElementById('appScreen').style.display = 'none';
   document.getElementById('sidInput').value = '';
   document.getElementById('nameInput').value = '';
-  document.getElementById('chatArea').innerHTML = '<div class="msg bot">👋 Hey! I\'m BullSpace AI. Tell me what kind of study space you need and I\'ll find the perfect spot for you in the USF Tampa Library!</div>';
 }
 
-function addMsg(text, type) {
-  const area = document.getElementById('chatArea');
-  const div = document.createElement('div');
-  div.className = 'msg ' + type;
-  div.textContent = text;
-  area.appendChild(div);
-  area.scrollTop = area.scrollHeight;
-  return div;
+function showPanel(id, tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  tab.classList.add('on');
+  if (id === 'reservations') renderReservations();
+  if (id === 'dashboard') renderDashboard();
+}
+
+function renderDashboard() {
+  let totalAv=0, totalOc=0, myRes=0;
+  Object.values(FLOORS).forEach(f => f.seats.forEach(s => {
+    const st = getSeatState(s.id);
+    if (st==='av') totalAv++;
+    else totalOc++;
+    if (st==='mine') myRes++;
+  }));
+  const total = totalAv + totalOc;
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="num green">${totalAv}</div><div class="lbl">Available</div></div>
+    <div class="stat-card"><div class="num red">${totalOc}</div><div class="lbl">Occupied</div></div>
+    <div class="stat-card"><div class="num">${Math.round(totalAv/total*100)}%</div><div class="lbl">Open rate</div></div>
+    <div class="stat-card"><div class="num amber">${myRes}</div><div class="lbl">My reservations</div></div>
+  `;
+
+  const floorData = Object.entries(FLOORS).map(([name, f]) => {
+    const seats = f.seats;
+    const oc = seats.filter(s => getSeatState(s.id)==='oc').length;
+    const pct = Math.round(oc/seats.length*100);
+    return {name, pct, noise: f.noise, nc: f.nc};
+  });
+
+  document.getElementById('floorBars').innerHTML = floorData.map(f => {
+    const color = f.pct > 75 ? '#dc2626' : f.pct > 50 ? '#d97706' : '#006747';
+    return `<div class="floor-row">
+      <div class="floor-name">${f.name}</div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${f.pct}%;background:${color}"></div></div>
+      <div class="bar-pct">${f.pct}%</div>
+      <div class="noise-badge ${f.nc}">${f.noise}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderFloorTabs() {
+  document.getElementById('floorTabs').innerHTML = Object.keys(FLOORS).map(f =>
+    `<div class="ftab${f===curFloor?' on':''}" onclick="switchFloor('${f}')">${f}</div>`
+  ).join('');
+}
+
+function switchFloor(f) { curFloor=f; selSeat=null; renderFloorTabs(); renderMap(f); document.getElementById('seatDetail').innerHTML='<div class="placeholder-detail">Click a green seat to see details and reserve it.</div>'; }
+
+function renderMap(floorName) {
+  const fl = FLOORS[floorName];
+  const zones = [...new Set(fl.seats.map(s => s.zone))];
+  let html = '';
+  zones.forEach(zone => {
+    html += `<div class="zone-label">${zone}</div><div class="seats-grid">`;
+    fl.seats.filter(s => s.zone===zone).forEach(s => {
+      const st = getSeatState(s.id);
+      const isSel = selSeat && selSeat.id===s.id;
+      html += `<button class="seat-btn ${st}${isSel?' sel':''}" onclick="selectSeat('${s.id}')" ${st==='oc'?'disabled':''} title="${s.id}">
+        <span class="seat-icon">${ICONS[s.type]||'🪑'}</span>
+        <span class="seat-id">${s.id.split('-').slice(1).join('-')}</span>
+      </button>`;
+    });
+    html += '</div>';
+  });
+  document.getElementById('mapContainer').innerHTML = html;
+}
+
+function selectSeat(id) {
+  const fl = FLOORS[curFloor];
+  const seat = fl.seats.find(s => s.id===id);
+  if (!seat) return;
+  selSeat = seat;
+  renderMap(curFloor);
+
+  const st = getSeatState(id);
+  const isMine = st === 'mine';
+  const isAv = st === 'av';
+  const res = reservations[id];
+
+  let timerHtml = '';
+  if (isMine && res) {
+    const left = Math.max(0, res.exp - Date.now());
+    const pct = Math.round(left/SESSION_MS*100);
+    const mins = Math.floor(left/60000);
+    const secs = Math.floor((left%60000)/1000);
+    const color = left < 15*60000 ? '#dc2626' : left < 30*60000 ? '#d97706' : '#006747';
+    timerHtml = `<div class="timer-wrap">
+      <div class="timer-labels"><span>Session time</span><span style="color:${color};font-weight:700">${mins}:${secs<10?'0':''}${secs} left</span></div>
+      <div class="timer-bar"><div class="timer-fill" style="width:${pct}%;background:${color}"></div></div>
+    </div>`;
+  }
+
+  let actions = '';
+  if (isAv) {
+    actions = `<button class="btn sm" onclick="reserveSeat('${id}')">Reserve this seat</button>`;
+  } else if (isMine) {
+    const ext = res && res.ext < 2;
+    actions = `
+      ${ext ? `<button class="btn sm amber" onclick="extendSeat('${id}')">+30 min</button>` : ''}
+      <button class="btn sm red" onclick="checkoutSeat('${id}')">Check out</button>
+    `;
+  }
+
+  const nearby = fl.seats.filter(s => s.id!==id && getSeatState(s.id)==='av').slice(0,3).map(s=>s.id).join(', ') || 'None on this floor';
+
+  document.getElementById('seatDetail').innerHTML = `
+    <h3>${seat.id}</h3>
+    <div class="floor-sub">${seat.zone} · ${curFloor}</div>
+    <div class="detail-grid">
+      <div class="detail-item"><div class="dl">Status</div><div class="dv"><span class="pill ${st}">${st==='mine'?'Your seat':st==='av'?'Available':'Occupied'}</span></div></div>
+      <div class="detail-item"><div class="dl">Type</div><div class="dv">${seat.type}</div></div>
+      <div class="detail-item"><div class="dl">Capacity</div><div class="dv">${seat.cap} person${seat.cap>1?'s':''}</div></div>
+      <div class="detail-item"><div class="dl">Charger</div><div class="dv">${seat.charger?'✅ Yes':'❌ No'}</div></div>
+      <div class="detail-item"><div class="dl">Noise level</div><div class="dv">${FLOORS[curFloor].noise}</div></div>
+      <div class="detail-item"><div class="dl">Nearby available</div><div class="dv" style="font-size:11px">${nearby}</div></div>
+    </div>
+    ${timerHtml}
+    <div class="action-btns">${actions}</div>
+  `;
+}
+
+function reserveSeat(id) {
+  const seat = FLOORS[curFloor].seats.find(s=>s.id===id);
+  reservations[id] = {uid: user.id, name: user.name, floor: curFloor, reservedAt: Date.now(), exp: Date.now()+SESSION_MS, ext: 0};
+  selSeat = seat;
+  renderMap(curFloor); renderDashboard(); renderReservations();
+  selectSeat(id);
+  alert('✅ Seat ' + id + ' reserved! Your 2-hour session has started.');
+}
+
+function checkoutSeat(id) {
+  delete reservations[id];
+  selSeat = null;
+  renderMap(curFloor); renderDashboard(); renderReservations();
+  document.getElementById('seatDetail').innerHTML = '<div class="placeholder-detail">✅ Checked out! Seat is now available for others.</div>';
+}
+
+function extendSeat(id) {
+  if (!reservations[id] || reservations[id].ext >= 2) return;
+  reservations[id].exp += EXTEND_MS;
+  reservations[id].ext++;
+  selectSeat(id);
+  renderReservations();
+  alert('⏱️ Session extended by 30 minutes! ' + (2-reservations[id].ext) + ' extensions remaining.');
+}
+
+function renderReservations() {
+  const mine = Object.entries(reservations).filter(([id,r]) => r.uid===user.id && Date.now()<r.exp);
+  const el = document.getElementById('resList');
+  if (!mine.length) {
+    el.innerHTML = '<div class="empty-res">🎫 No active reservations.<br><span style="font-size:12px">Go to the Seat Map tab to reserve a seat.</span></div>';
+    return;
+  }
+  el.innerHTML = mine.map(([id,r]) => {
+    const left = Math.max(0, r.exp - Date.now());
+    const pct = Math.round(left/SESSION_MS*100);
+    const mins = Math.floor(left/60000);
+    const secs = Math.floor((left%60000)/1000);
+    const color = left < 15*60000 ? '#dc2626' : left < 30*60000 ? '#d97706' : '#006747';
+    return `<div class="res-card">
+      <div class="rh"><div><div class="rid">${id}</div><div class="rfloor">${r.floor} · Checked in at ${new Date(r.reservedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div></div><span class="pill mine">Active</span></div>
+      <div class="timer-wrap">
+        <div class="timer-labels"><span>Time remaining</span><span style="color:${color};font-weight:700">${mins}:${secs<10?'0':''}${secs}</span></div>
+        <div class="timer-bar"><div class="timer-fill" style="width:${pct}%;background:${color}"></div></div>
+      </div>
+      <div class="res-actions">
+        ${r.ext<2?`<button class="btn sm amber" onclick="extendSeat('${id}')">+30 min (${2-r.ext} left)</button>`:'<span style="font-size:12px;color:#888">Max extensions used</span>'}
+        <button class="btn sm red" onclick="checkoutSeat('${id}')">Check out</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 async function sendMsg() {
@@ -134,34 +504,43 @@ async function sendMsg() {
   const btn = document.getElementById('sendBtn');
   const text = input.value.trim();
   if (!text) return;
-
-  input.value = '';
-  btn.disabled = true;
+  input.value = ''; btn.disabled = true;
   addMsg(text, 'user');
   const typing = addMsg('BullSpace AI is thinking...', 'bot typing');
-
   try {
     const res = await fetch('/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ student_id: studentId, message: text })
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({student_id: user.id, message: text})
     });
     const data = await res.json();
     typing.remove();
     addMsg(data.response, 'bot');
-  } catch (e) {
+  } catch(e) {
     typing.remove();
     addMsg('Sorry, something went wrong. Please try again.', 'bot');
   }
-
   btn.disabled = false;
   input.focus();
 }
 
-function sendSug(text) {
-  document.getElementById('msgInput').value = text;
-  sendMsg();
+function sendSug(text) { document.getElementById('msgInput').value = text; sendMsg(); }
+
+function addMsg(text, cls) {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'msg ' + cls;
+  div.textContent = text;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+  return div;
 }
+
+setInterval(() => {
+  if (!user) return;
+  renderReservations();
+  if (selSeat) selectSeat(selSeat.id);
+}, 1000);
 </script>
 </body>
 </html>
