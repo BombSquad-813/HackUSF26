@@ -4,46 +4,207 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BullSpace AI — USF Smart Library</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
+  :root {
+    --usf-green: #006747;
+    --usf-dark: #004d34;
+    --usf-gold: #CFC493;
+    --grid-color: rgba(0, 103, 71, 0.15);
+    --grid-size: 40px;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; min-height: 100vh; }
-  .header { background: #006747; color: #fff; padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
-  .bull { width: 38px; height: 38px; background: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-  .brand { font-size: 18px; font-weight: 700; }
-  .sub { font-size: 11px; opacity: .8; }
-  .status-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; margin-left: auto; animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-  .login-wrap { max-width: 400px; margin: 50px auto; background: #fff; border-radius: 16px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,.1); }
-  .login-wrap h2 { color: #006747; font-size: 20px; margin-bottom: 6px; }
-  .login-wrap p { font-size: 13px; color: #666; margin-bottom: 20px; }
-  .field { margin-bottom: 14px; }
-  .field label { display: block; font-size: 11px; font-weight: 700; color: #444; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
-  .field input { width: 100%; padding: 10px 13px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
-  .field input:focus { border-color: #006747; }
-  .btn { width: 100%; padding: 11px; background: #006747; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
-  .btn:hover { background: #005538; }
-  .btn.sm { width: auto; padding: 7px 16px; font-size: 12px; }
-  .btn.red { background: #dc2626; }
-  .btn.red:hover { background: #b91c1c; }
-  .btn.amber { background: #d97706; }
-  .btn.amber:hover { background: #b45309; }
-  .err { font-size: 12px; color: #dc2626; margin-top: 6px; display: none; }
-  .app { display: none; }
-  .user-bar { background: #005538; color: #fff; padding: 8px 20px; font-size: 12px; display: flex; align-items: center; gap: 10px; }
-  .user-bar button { margin-left: auto; background: none; border: 1px solid rgba(255,255,255,.4); color: #fff; padding: 3px 10px; border-radius: 10px; font-size: 11px; cursor: pointer; }
-  .nav-tabs { display: flex; background: #fff; border-bottom: 2px solid #e5e7eb; padding: 0 20px; }
-  .tab { padding: 12px 18px; font-size: 13px; font-weight: 600; color: #666; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all .2s; }
-  .tab.on { color: #006747; border-color: #006747; }
+  body { font-family: 'Space Grotesk', sans-serif; background: #f0f2f5; min-height: 100vh; }
+
+  /* ── ANIMATED GRID BACKGROUND ── */
+  .grid-bg {
+    position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+    background: #001a0f;
+  }
+  .grid-bg::before {
+    content: '';
+    position: absolute; inset: -50%;
+    background-image:
+      linear-gradient(var(--grid-color) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+    background-size: var(--grid-size) var(--grid-size);
+    animation: gridMove 8s linear infinite;
+  }
+  .grid-bg::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(0,103,71,0.18) 0%, transparent 70%);
+    animation: pulse-glow 4s ease-in-out infinite;
+  }
+  @keyframes gridMove { from{transform:translate(0,0)} to{transform:translate(var(--grid-size),var(--grid-size))} }
+  @keyframes pulse-glow { 0%,100%{opacity:.6} 50%{opacity:1} }
+
+  .grid-dots {
+    position: absolute; inset: 0; overflow: hidden;
+  }
+  .grid-dot {
+    position: absolute; width: 3px; height: 3px; border-radius: 50%;
+    background: rgba(0,255,140,0.6);
+    animation: dot-pulse var(--dur, 3s) ease-in-out infinite;
+    animation-delay: var(--delay, 0s);
+  }
+  @keyframes dot-pulse { 0%,100%{opacity:0;transform:scale(0)} 50%{opacity:1;transform:scale(1)} }
+
+  .scan-line {
+    position: absolute; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0,255,140,0.4), transparent);
+    animation: scan 6s linear infinite;
+  }
+  @keyframes scan { from{top:-2px} to{top:100%} }
+
+  /* ── HEADER (with subtle grid) ── */
+  .header {
+    position: relative; overflow: hidden;
+    background: var(--usf-dark);
+    color: #fff; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px;
+    z-index: 10; box-shadow: 0 2px 20px rgba(0,0,0,.4);
+  }
+  .header-grid {
+    position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(0,103,71,0.2) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,103,71,0.2) 1px, transparent 1px);
+    background-size: 20px 20px;
+    animation: gridMove 4s linear infinite;
+  }
+  .header-glow {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 40% 100% at 10% 50%, rgba(0,255,140,0.08) 0%, transparent 60%);
+  }
+  .bull {
+    position: relative; z-index: 1;
+    width: 38px; height: 38px; background: #fff; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+    box-shadow: 0 0 16px rgba(0,255,140,0.3);
+  }
+  .brand { position: relative; z-index: 1; font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .sub { position: relative; z-index: 1; font-size: 11px; opacity: .7; font-family: 'JetBrains Mono', monospace; }
+  .status-dot {
+    width: 8px; height: 8px; background: #4ade80; border-radius: 50%;
+    margin-left: auto; position: relative; z-index: 1;
+    animation: pulse-dot 2s infinite;
+    box-shadow: 0 0 8px #4ade80;
+  }
+  @keyframes pulse-dot { 0%,100%{opacity:1;box-shadow:0 0 8px #4ade80} 50%{opacity:.5;box-shadow:0 0 2px #4ade80} }
+
+  /* ── LOGIN ── */
+  .login-outer {
+    position: relative; z-index: 10;
+    min-height: calc(100vh - 66px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .login-wrap {
+    background: rgba(0, 20, 10, 0.85);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(0,255,140,0.2);
+    border-radius: 20px; padding: 36px;
+    width: 100%; max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5), 0 0 40px rgba(0,103,71,0.15);
+  }
+  .login-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(0,103,71,0.3); border: 1px solid rgba(0,255,140,0.3);
+    border-radius: 20px; padding: 4px 12px;
+    font-size: 11px; color: #4ade80;
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 20px; letter-spacing: 1px;
+  }
+  .login-badge::before { content: '●'; font-size: 8px; animation: pulse-dot 2s infinite; }
+  .login-wrap h2 { color: #fff; font-size: 24px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.5px; }
+  .login-wrap p { font-size: 13px; color: rgba(255,255,255,.5); margin-bottom: 24px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 11px; font-weight: 600; color: rgba(255,255,255,.5); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; font-family: 'JetBrains Mono', monospace; }
+  .field input, .field select {
+    width: 100%; padding: 11px 14px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(0,255,140,0.2);
+    border-radius: 10px; font-size: 14px;
+    color: #fff; outline: none;
+    font-family: 'Space Grotesk', sans-serif;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .field input::placeholder { color: rgba(255,255,255,.25); }
+  .field input:focus, .field select:focus {
+    border-color: rgba(0,255,140,0.5);
+    box-shadow: 0 0 0 3px rgba(0,255,140,0.1);
+  }
+  .field select option { background: #001a0f; color: #fff; }
+  .login-btn {
+    width: 100%; padding: 13px;
+    background: var(--usf-green);
+    color: #fff; border: none; border-radius: 10px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    font-family: 'Space Grotesk', sans-serif;
+    transition: all .2s; position: relative; overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,103,71,0.4);
+    letter-spacing: 0.3px;
+  }
+  .login-btn::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: translateX(-100%); transition: transform .4s;
+  }
+  .login-btn:hover { background: #008055; box-shadow: 0 6px 28px rgba(0,103,71,0.5); }
+  .login-btn:hover::after { transform: translateX(100%); }
+  .err { font-size: 12px; color: #f87171; margin-top: 8px; display: none; }
+
+  /* ── APP ── */
+  .app { display: none; position: relative; z-index: 5; background: #f0f2f5; min-height: calc(100vh - 66px); }
+  .user-bar { background: var(--usf-dark); color: #fff; padding: 8px 20px; font-size: 12px; display: flex; align-items: center; gap: 10px; font-family: 'JetBrains Mono', monospace; }
+  .user-bar button { margin-left: auto; background: none; border: 1px solid rgba(255,255,255,.3); color: #fff; padding: 3px 10px; border-radius: 10px; font-size: 11px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; }
+  .nav-tabs { display: flex; background: #fff; border-bottom: 2px solid #e5e7eb; padding: 0 20px; overflow-x: auto; }
+  .tab { padding: 12px 18px; font-size: 13px; font-weight: 600; color: #666; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: all .2s; }
+  .tab.on { color: var(--usf-green); border-color: var(--usf-green); }
   .panel { display: none; padding: 20px; }
   .panel.on { display: block; }
 
-  /* Dashboard */
-  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
-  .stat-card { background: #fff; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  /* ── BELLINI BANNER ── */
+  .bellini-banner {
+    background: linear-gradient(135deg, #001a0f 0%, #003320 50%, #001a0f 100%);
+    border: 1px solid rgba(0,255,140,0.2);
+    border-radius: 14px; padding: 20px 24px;
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 20px;
+    position: relative; overflow: hidden;
+  }
+  .bellini-banner::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(0,103,71,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(0,103,71,0.15) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  .bellini-logo {
+    position: relative; z-index: 1;
+    width: 64px; height: 64px; background: var(--usf-green);
+    border-radius: 14px; display: flex; align-items: center; justify-content: center;
+    font-size: 32px; flex-shrink: 0;
+    box-shadow: 0 0 20px rgba(0,103,71,0.4);
+  }
+  .bellini-info { position: relative; z-index: 1; flex: 1; }
+  .bellini-info h3 { color: #fff; font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .bellini-info p { color: rgba(255,255,255,.6); font-size: 13px; line-height: 1.5; }
+  .bellini-tag {
+    position: relative; z-index: 1;
+    background: rgba(0,255,140,0.1); border: 1px solid rgba(0,255,140,0.3);
+    color: #4ade80; font-size: 11px; font-weight: 700;
+    padding: 4px 12px; border-radius: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+  }
+
+  /* ── DASHBOARD ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: #fff; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.06); border: 1px solid #e5e7eb; }
   .stat-card .num { font-size: 28px; font-weight: 700; }
-  .stat-card .num.green { color: #006747; }
-  .stat-card .num.red { color: #dc2626; }
-  .stat-card .num.amber { color: #d97706; }
+  .num.green{color:#006747}.num.red{color:#dc2626}.num.amber{color:#d97706}
   .stat-card .lbl { font-size: 11px; color: #888; margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
   .floor-bars { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
   .floor-bars h3 { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 14px; }
@@ -53,21 +214,22 @@
   .bar-fill { height: 100%; border-radius: 5px; transition: width 1s; }
   .bar-pct { font-size: 11px; color: #888; width: 36px; text-align: right; flex-shrink: 0; }
   .noise-badge { font-size: 10px; padding: 2px 7px; border-radius: 8px; flex-shrink: 0; }
-  .noise-quiet { background: #ede9fe; color: #5b21b6; }
-  .noise-low { background: #d1fae5; color: #065f46; }
-  .noise-mod { background: #fef3c7; color: #92400e; }
-  .noise-cas { background: #dbeafe; color: #1e40af; }
+  .noise-quiet{background:#ede9fe;color:#5b21b6}
+  .noise-low{background:#d1fae5;color:#065f46}
+  .noise-mod{background:#fef3c7;color:#92400e}
+  .noise-cas{background:#dbeafe;color:#1e40af}
 
-  /* Seat Map */
-  .floor-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  /* ── SEAT MAP ── */
+  .map-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .floor-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
   .ftab { padding: 6px 14px; font-size: 12px; font-weight: 600; border: 2px solid #ddd; border-radius: 20px; cursor: pointer; background: #fff; color: #666; transition: all .2s; }
-  .ftab.on { background: #006747; color: #fff; border-color: #006747; }
+  .ftab.on { background: var(--usf-green); color: #fff; border-color: var(--usf-green); }
+  .noise-filter { padding: 6px 12px; border: 2px solid #ddd; border-radius: 20px; font-size: 12px; font-weight: 600; color: #555; background: #fff; cursor: pointer; outline: none; }
+  .noise-filter:focus { border-color: var(--usf-green); }
   .legend { display: flex; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
   .leg { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #555; }
   .leg-dot { width: 14px; height: 14px; border-radius: 4px; }
-  .leg-dot.av { background: #006747; }
-  .leg-dot.oc { background: #dc2626; }
-  .leg-dot.sel { background: #d97706; border: 2px solid #92400e; }
+  .leg-dot.av{background:#006747}.leg-dot.oc{background:#dc2626}.leg-dot.mine{background:#d97706}
   .map-container { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.06); margin-bottom: 16px; }
   .zone-label { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px; margin-top: 16px; }
   .zone-label:first-child { margin-top: 0; }
@@ -75,7 +237,7 @@
   .seat-btn { width: 56px; height: 52px; border-radius: 8px; border: 2px solid transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 9px; font-weight: 700; transition: all .15s; position: relative; }
   .seat-btn.av { background: #d1fae5; border-color: #006747; color: #065f46; }
   .seat-btn.av:hover { transform: scale(1.1); box-shadow: 0 4px 12px rgba(0,103,71,.3); }
-  .seat-btn.oc { background: #fee2e2; border-color: #dc2626; color: #991b1b; cursor: not-allowed; }
+  .seat-btn.oc { background: #fee2e2; border-color: #dc2626; color: #991b1b; cursor: not-allowed; opacity: .7; }
   .seat-btn.mine { background: #fef3c7; border-color: #d97706; color: #92400e; }
   .seat-btn.sel { transform: scale(1.12); box-shadow: 0 0 0 3px #006747; }
   .seat-icon { font-size: 16px; line-height: 1; }
@@ -89,73 +251,138 @@
   .detail-item .dv { font-size: 13px; font-weight: 600; color: #333; }
   .action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
   .placeholder-detail { text-align: center; padding: 30px; color: #aaa; font-size: 13px; }
+  .btn { padding: 11px 20px; background: var(--usf-green); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Space Grotesk', sans-serif; transition: all .2s; }
+  .btn:hover { background: #005538; }
+  .btn.sm { padding: 7px 16px; font-size: 12px; }
+  .btn.red{background:#dc2626}.btn.red:hover{background:#b91c1c}
+  .btn.amber{background:#d97706}.btn.amber:hover{background:#b45309}
+  .btn.blue{background:#1d4ed8}.btn.blue:hover{background:#1e40af}
+  .timer-wrap { margin-bottom: 12px; }
+  .timer-labels { display: flex; justify-content: space-between; font-size: 11px; color: #888; margin-bottom: 4px; }
+  .timer-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+  .timer-fill { height: 100%; border-radius: 4px; transition: width .5s, background .5s; }
 
-  /* Reservations */
+  /* ── RESERVATIONS ── */
   .res-list { display: flex; flex-direction: column; gap: 12px; }
   .res-card { background: #fff; border-radius: 12px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
   .res-card .rh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 6px; }
   .res-card .rid { font-size: 15px; font-weight: 700; color: #333; }
   .res-card .rfloor { font-size: 12px; color: #888; }
-  .timer-wrap { margin-bottom: 10px; }
-  .timer-labels { display: flex; justify-content: space-between; font-size: 11px; color: #888; margin-bottom: 4px; }
-  .timer-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
-  .timer-fill { height: 100%; border-radius: 4px; transition: width .5s, background .5s; }
-  .res-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .res-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
   .empty-res { text-align: center; padding: 40px; color: #aaa; font-size: 14px; background: #fff; border-radius: 12px; }
 
-  /* Chat */
-  .chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 200px); }
+  /* ── QR MODAL ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+  .modal-box { background: #fff; border-radius: 20px; padding: 28px; max-width: 320px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+  .modal-box h3 { font-size: 18px; font-weight: 700; color: #333; margin-bottom: 6px; }
+  .modal-box p { font-size: 13px; color: #666; margin-bottom: 20px; }
+  .qr-svg { margin: 0 auto 16px; display: block; border-radius: 8px; border: 4px solid #006747; }
+  .qr-code-text { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #aaa; margin-bottom: 20px; word-break: break-all; }
+  .scan-btn { width: 100%; padding: 12px; background: #006747; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 8px; font-family: 'Space Grotesk', sans-serif; }
+  .scan-btn:hover { background: #005538; }
+  .close-btn { width: 100%; padding: 10px; background: #f3f4f6; color: #666; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; }
+
+  /* ── WARNING POPUP ── */
+  .warn-popup { position: fixed; bottom: 24px; right: 24px; background: #dc2626; color: #fff; border-radius: 14px; padding: 16px 20px; max-width: 300px; box-shadow: 0 8px 24px rgba(220,38,38,.4); z-index: 999; display: none; animation: slideIn .3s ease; }
+  @keyframes slideIn { from{transform:translateX(120%);opacity:0} to{transform:translateX(0);opacity:1} }
+  .warn-popup .wp-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .warn-popup .wp-msg { font-size: 12px; opacity: .9; margin-bottom: 12px; }
+  .warn-popup .wp-btns { display: flex; gap: 8px; }
+  .warn-popup button { flex: 1; padding: 7px; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Space Grotesk', sans-serif; }
+  .warn-popup .wp-ext { background: #fff; color: #dc2626; }
+  .warn-popup .wp-co { background: rgba(255,255,255,.2); color: #fff; }
+
+  /* ── CHAT ── */
+  .chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 220px); min-height: 300px; }
   .suggestions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
   .sug { padding: 6px 14px; background: #d1fae5; border: 1.5px solid #006747; border-radius: 20px; font-size: 12px; color: #006747; cursor: pointer; font-weight: 600; transition: all .2s; }
   .sug:hover { background: #006747; color: #fff; }
-  .chat-area { flex: 1; overflow-y: auto; background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06); display: flex; flex-direction: column; gap: 12px; min-height: 200px; }
+  .chat-area { flex: 1; overflow-y: auto; background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06); display: flex; flex-direction: column; gap: 12px; }
   .msg { max-width: 78%; padding: 11px 15px; border-radius: 16px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
   .msg.user { background: #006747; color: #fff; border-radius: 16px 16px 4px 16px; align-self: flex-end; }
   .msg.bot { background: #f3f4f6; color: #222; border-radius: 16px 16px 16px 4px; align-self: flex-start; }
   .msg.typing { color: #999; font-style: italic; }
   .input-row { display: flex; gap: 8px; }
-  .input-row input { flex: 1; padding: 11px 16px; border: 1.5px solid #ddd; border-radius: 24px; font-size: 13px; outline: none; }
+  .input-row input { flex: 1; padding: 11px 16px; border: 1.5px solid #ddd; border-radius: 24px; font-size: 13px; outline: none; font-family: 'Space Grotesk', sans-serif; }
   .input-row input:focus { border-color: #006747; }
-  .send-btn { padding: 11px 22px; background: #006747; color: #fff; border: none; border-radius: 24px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .send-btn { padding: 11px 22px; background: #006747; color: #fff; border: none; border-radius: 24px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Space Grotesk', sans-serif; }
   .send-btn:hover { background: #005538; }
   .send-btn:disabled { opacity: .5; cursor: not-allowed; }
 
   .pill { font-size: 11px; padding: 3px 9px; border-radius: 10px; font-weight: 600; }
-  .pill.av { background: #d1fae5; color: #065f46; }
-  .pill.oc { background: #fee2e2; color: #991b1b; }
-  .pill.mine { background: #fef3c7; color: #92400e; }
+  .pill.av{background:#d1fae5;color:#065f46}
+  .pill.oc{background:#fee2e2;color:#991b1b}
+  .pill.mine{background:#fef3c7;color:#92400e}
 
-  @media(max-width:600px) {
-    .stats-grid { grid-template-columns: 1fr 1fr; }
-    .detail-grid { grid-template-columns: 1fr; }
+  @media(max-width:600px){
+    .stats-grid{grid-template-columns:1fr 1fr}
+    .detail-grid{grid-template-columns:1fr}
+    .bellini-banner{flex-direction:column;text-align:center}
   }
 </style>
 </head>
 <body>
 
-<div class="header">
+<!-- ANIMATED GRID (login + header only) -->
+<div class="grid-bg" id="gridBg">
+  <div class="grid-dots" id="gridDots"></div>
+  <div class="scan-line"></div>
+</div>
+
+<!-- HEADER -->
+<div class="header" id="mainHeader">
+  <div class="header-grid"></div>
+  <div class="header-glow"></div>
   <div class="bull">🐂</div>
-  <div><div class="brand">BullSpace AI</div><div class="sub">USF Tampa Campus Library</div></div>
+  <div>
+    <div class="brand">BullSpace AI</div>
+    <div class="sub">USF_TAMPA_LIBRARY // v2.0</div>
+  </div>
   <div class="status-dot"></div>
 </div>
 
+<!-- WARNING POPUP -->
+<div class="warn-popup" id="warnPopup">
+  <div class="wp-title">⚠️ Session expiring soon!</div>
+  <div class="wp-msg" id="warnMsg">Your seat reservation expires in 15 minutes.</div>
+  <div class="wp-btns">
+    <button class="wp-ext" id="warnExtBtn" onclick="extendFromWarn()">+30 min</button>
+    <button class="wp-co" onclick="checkoutFromWarn()">Check out</button>
+  </div>
+</div>
+
+<!-- QR MODAL -->
+<div class="modal-overlay" id="qrModal" style="display:none" onclick="closeQR(event)">
+  <div class="modal-box">
+    <h3>📱 QR Checkout</h3>
+    <p>Show this code at any library kiosk or scan to check out instantly.</p>
+    <canvas id="qrCanvas" class="qr-svg" width="180" height="180"></canvas>
+    <div class="qr-code-text" id="qrText"></div>
+    <button class="scan-btn" onclick="simScan()">📷 Simulate kiosk scan</button>
+    <button class="close-btn" onclick="document.getElementById('qrModal').style.display='none'">Close</button>
+  </div>
+</div>
+
 <!-- LOGIN -->
-<div class="login-wrap" id="loginScreen">
-  <h2>Welcome to BullSpace AI</h2>
-  <p>Sign in with your USF Student ID to find your perfect study spot.</p>
-  <div class="field"><label>Student ID</label><input type="text" id="sidInput" placeholder="U12345678" maxlength="10"></div>
-  <div class="field"><label>Full Name</label><input type="text" id="nameInput" placeholder="Your name" maxlength="40"></div>
-  <div class="err" id="loginErr">Please enter a valid Student ID (U + 8 digits) and your name.</div>
-  <button class="btn" onclick="login()">Find My Study Space →</button>
+<div class="login-outer" id="loginScreen">
+  <div class="login-wrap">
+    <div class="login-badge">SYSTEM ONLINE</div>
+    <h2>Welcome to BullSpace AI</h2>
+    <p>Sign in with your USF Student ID to find your perfect study spot across all 6 floors.</p>
+    <div class="field"><label>Student ID</label><input type="text" id="sidInput" placeholder="U12345678" maxlength="10"></div>
+    <div class="field"><label>Full Name</label><input type="text" id="nameInput" placeholder="Your name" maxlength="40"></div>
+    <div class="err" id="loginErr">Please enter a valid Student ID (U + 8 digits) and your name.</div>
+    <button class="login-btn" onclick="login()">Find My Study Space →</button>
+  </div>
 </div>
 
 <!-- APP -->
 <div class="app" id="appScreen">
   <div class="user-bar">
-    <span>Signed in as:</span><strong id="userLabel"></strong>
+    <span style="opacity:.6">SIGNED IN AS</span>
+    <strong id="userLabel"></strong>
     <button onclick="logout()">Sign out</button>
   </div>
-
   <div class="nav-tabs">
     <div class="tab on" onclick="showPanel('dashboard',this)">📊 Dashboard</div>
     <div class="tab" onclick="showPanel('seatmap',this)">🗺 Seat Map</div>
@@ -166,15 +393,21 @@
   <!-- DASHBOARD -->
   <div class="panel on" id="dashboard">
     <div class="stats-grid" id="statsGrid"></div>
-    <div class="floor-bars">
-      <h3>Floor occupancy</h3>
-      <div id="floorBars"></div>
-    </div>
+    <div class="floor-bars"><h3>Floor occupancy</h3><div id="floorBars"></div></div>
   </div>
 
   <!-- SEAT MAP -->
   <div class="panel" id="seatmap">
-    <div class="floor-tabs" id="floorTabs"></div>
+    <div class="map-controls">
+      <div class="floor-tabs" id="floorTabs"></div>
+      <select class="noise-filter" id="noiseFilter" onchange="renderMap(curFloor)">
+        <option value="all">All noise levels</option>
+        <option value="quiet">🤫 Quiet only</option>
+        <option value="low-moderate">📖 Low-moderate</option>
+        <option value="moderate">💬 Moderate</option>
+        <option value="casual">🗣 Casual</option>
+      </select>
+    </div>
     <div class="legend">
       <div class="leg"><div class="leg-dot av"></div>Available</div>
       <div class="leg"><div class="leg-dot oc"></div>Occupied</div>
@@ -198,9 +431,10 @@
         <div class="sug" onclick="sendSug('Find me a computer station')">💻 Computer</div>
         <div class="sug" onclick="sendSug('Where can I get coffee?')">☕ Coffee</div>
         <div class="sug" onclick="sendSug('What are the library hours today?')">🕐 Hours</div>
+        <div class="sug" onclick="sendSug('Tell me about the Bellini AI College')">🏛 Bellini College</div>
       </div>
       <div class="chat-area" id="chatArea">
-        <div class="msg bot">👋 Hey! I'm BullSpace AI. Tell me what kind of study space you need!</div>
+        <div class="msg bot">👋 Hey! I'm BullSpace AI. Tell me what kind of study space you need across USF Tampa Library's 6 floors!</div>
       </div>
       <div class="input-row">
         <input type="text" id="msgInput" placeholder="Ask me anything about the library..." onkeydown="if(event.key==='Enter')sendMsg()">
@@ -211,8 +445,23 @@
 </div>
 
 <script>
+// ── ANIMATED DOTS ──
+(function(){
+  const container = document.getElementById('gridDots');
+  for(let i=0;i<30;i++){
+    const dot = document.createElement('div');
+    dot.className = 'grid-dot';
+    dot.style.left = (Math.random()*100)+'%';
+    dot.style.top  = (Math.random()*100)+'%';
+    dot.style.setProperty('--dur',  (2+Math.random()*4)+'s');
+    dot.style.setProperty('--delay',(Math.random()*4)+'s');
+    container.appendChild(dot);
+  }
+})();
+
+// ── DATA ──
 const FLOORS = {
-  "1st Floor": { noise: "casual", nc: "noise-cas", seats: [
+  "1st Floor": { noise:"casual", nc:"noise-cas", advising:false, seats:[
     {id:"1-LC01",type:"table",zone:"Learning Commons",cap:4,charger:true},
     {id:"1-LC02",type:"table",zone:"Learning Commons",cap:4,charger:true},
     {id:"1-LC03",type:"table",zone:"Learning Commons",cap:4,charger:false},
@@ -222,7 +471,7 @@ const FLOORS = {
     {id:"1-VL01",type:"station",zone:"VizLab",cap:1,charger:true},
     {id:"1-VL02",type:"station",zone:"VizLab",cap:1,charger:true},
   ]},
-  "2nd Floor": { noise: "moderate", nc: "noise-mod", seats: [
+  "2nd Floor": { noise:"moderate", nc:"noise-mod", advising:false, seats:[
     {id:"2-LC01",type:"carrel",zone:"Learning Commons",cap:1,charger:true},
     {id:"2-LC02",type:"carrel",zone:"Learning Commons",cap:1,charger:false},
     {id:"2-LC03",type:"carrel",zone:"Learning Commons",cap:1,charger:true},
@@ -232,7 +481,7 @@ const FLOORS = {
     {id:"2-TH02",type:"table",zone:"Tutoring Hub",cap:6,charger:false},
     {id:"2-WC01",type:"table",zone:"Writing Center",cap:4,charger:false},
   ]},
-  "3rd Floor": { noise: "low-moderate", nc: "noise-low", seats: [
+  "3rd Floor": { noise:"low-moderate", nc:"noise-low", advising:false, seats:[
     {id:"3-W305",type:"carrel",zone:"West Carrels",cap:1,charger:false},
     {id:"3-W306",type:"carrel",zone:"West Carrels",cap:1,charger:true},
     {id:"3-W318",type:"carrel",zone:"West Carrels",cap:1,charger:false},
@@ -241,7 +490,7 @@ const FLOORS = {
     {id:"3-OT01",type:"table",zone:"Open Reading Tables",cap:4,charger:true},
     {id:"3-OT02",type:"table",zone:"Open Reading Tables",cap:4,charger:false},
   ]},
-  "4th Floor": { noise: "low-moderate", nc: "noise-low", seats: [
+  "4th Floor": { noise:"low-moderate", nc:"noise-low", advising:false, seats:[
     {id:"4-W440",type:"carrel",zone:"West Carrels",cap:1,charger:false},
     {id:"4-W441",type:"carrel",zone:"West Carrels",cap:1,charger:true},
     {id:"4-E426",type:"carrel",zone:"East Carrels",cap:1,charger:false},
@@ -249,7 +498,7 @@ const FLOORS = {
     {id:"4-SC01",type:"table",zone:"Special Collections",cap:6,charger:false},
     {id:"4-SC02",type:"table",zone:"Special Collections",cap:6,charger:false},
   ]},
-  "5th Floor": { noise: "quiet", nc: "noise-quiet", seats: [
+  "5th Floor": { noise:"quiet", nc:"noise-quiet", advising:false, seats:[
     {id:"5-520A",type:"room",zone:"Reading Room West",cap:6,charger:true},
     {id:"5-520B",type:"room",zone:"Reading Room West",cap:6,charger:true},
     {id:"5-520C",type:"room",zone:"Reading Room West",cap:6,charger:true},
@@ -260,178 +509,174 @@ const FLOORS = {
     {id:"5-OC01",type:"carrel",zone:"Open Stacks",cap:1,charger:false},
     {id:"5-OC02",type:"carrel",zone:"Open Stacks",cap:1,charger:false},
   ]},
-  "6th Floor": { noise: "moderate", nc: "noise-mod", seats: [
-    {id:"6-BA01",type:"table",zone:"Bellini AI College",cap:4,charger:true},
-    {id:"6-BA02",type:"table",zone:"Bellini AI College",cap:4,charger:false},
-    {id:"6-CR01",type:"room",zone:"Conference Room LIB645",cap:12,charger:true},
-  ]},
+  "6th Floor": { noise:"moderate", nc:"noise-mod", advising:true, seats:[] },
 };
 
-const ICONS = {carrel:"📖",table:"📋",computer:"💻",station:"🖥️",room:"🚪"};
-const SESSION_MS = 2 * 60 * 60 * 1000;
-const EXTEND_MS  = 30 * 60 * 1000;
+const ICONS={carrel:"📖",table:"📋",computer:"💻",station:"🖥️",room:"🚪"};
+const SESSION_MS=2*60*60*1000, EXTEND_MS=30*60*1000, WARN_MS=15*60*1000;
+let user=null,occupancy={},reservations={},selSeat=null,curFloor="1st Floor";
+let warnSeatId=null,warnShown={};
 
-let user = null;
-let occupancy = {};
-let reservations = {};
-let selSeat = null;
-let curFloor = "1st Floor";
-let ticker = null;
-
-function randomOcc() { return Math.random() < 0.35; }
-
-function initOccupancy() {
-  Object.values(FLOORS).forEach(f => {
-    f.seats.forEach(s => {
-      if (!occupancy[s.id]) occupancy[s.id] = randomOcc();
-    });
-  });
-}
-
-function getSeatState(id) {
-  if (reservations[id]) {
-    if (Date.now() > reservations[id].exp) { delete reservations[id]; return 'av'; }
-    if (reservations[id].uid === user.id) return 'mine';
+function randomOcc(){return Math.random()<0.35;}
+function initOcc(){Object.entries(FLOORS).forEach(([,f])=>{if(!f.advising)f.seats.forEach(s=>{if(!occupancy[s.id])occupancy[s.id]=randomOcc();});});}
+function getSeatState(id){
+  if(reservations[id]){
+    if(Date.now()>reservations[id].exp){delete reservations[id];return 'av';}
+    if(reservations[id].uid===user.id) return 'mine';
     return 'oc';
   }
-  return occupancy[id] ? 'oc' : 'av';
+  return occupancy[id]?'oc':'av';
 }
 
-function login() {
-  const sid = document.getElementById('sidInput').value.trim();
-  const nm  = document.getElementById('nameInput').value.trim();
-  if (!/^U\d{8}$/.test(sid) || !nm) { document.getElementById('loginErr').style.display='block'; return; }
-  user = {id: sid, name: nm};
-  document.getElementById('loginErr').style.display = 'none';
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('appScreen').style.display = 'block';
-  document.getElementById('userLabel').textContent = nm + ' (' + sid + ')';
-  initOccupancy();
-  renderDashboard();
-  renderFloorTabs();
-  renderMap(curFloor);
-  renderReservations();
-  ticker = setInterval(() => { renderDashboard(); renderMap(curFloor); renderReservations(); }, 30000);
+function login(){
+  const sid=document.getElementById('sidInput').value.trim();
+  const nm=document.getElementById('nameInput').value.trim();
+  if(!/^U\d{8}$/.test(sid)||!nm){document.getElementById('loginErr').style.display='block';return;}
+  user={id:sid,name:nm};
+  document.getElementById('loginErr').style.display='none';
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
+  document.getElementById('gridBg').style.display='none';
+  document.getElementById('userLabel').textContent=nm+' ('+sid+')';
+  initOcc();renderDashboard();renderFloorTabs();renderMap(curFloor);renderReservations();
 }
 
-function logout() {
-  clearInterval(ticker);
-  user = null; occupancy = {}; reservations = {}; selSeat = null;
-  document.getElementById('loginScreen').style.display = 'block';
-  document.getElementById('appScreen').style.display = 'none';
-  document.getElementById('sidInput').value = '';
-  document.getElementById('nameInput').value = '';
+function logout(){
+  user=null;occupancy={};reservations={};selSeat=null;warnShown={};
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('appScreen').style.display='none';
+  document.getElementById('gridBg').style.display='block';
+  document.getElementById('warnPopup').style.display='none';
+  document.getElementById('sidInput').value='';
+  document.getElementById('nameInput').value='';
 }
 
-function showPanel(id, tab) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+function showPanel(id,tab){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   document.getElementById(id).classList.add('on');
   tab.classList.add('on');
-  if (id === 'reservations') renderReservations();
-  if (id === 'dashboard') renderDashboard();
+  if(id==='reservations') renderReservations();
+  if(id==='dashboard') renderDashboard();
 }
 
-function renderDashboard() {
-  let totalAv=0, totalOc=0, myRes=0;
-  Object.values(FLOORS).forEach(f => f.seats.forEach(s => {
-    const st = getSeatState(s.id);
-    if (st==='av') totalAv++;
-    else totalOc++;
-    if (st==='mine') myRes++;
-  }));
-  const total = totalAv + totalOc;
-  document.getElementById('statsGrid').innerHTML = `
-    <div class="stat-card"><div class="num green">${totalAv}</div><div class="lbl">Available</div></div>
-    <div class="stat-card"><div class="num red">${totalOc}</div><div class="lbl">Occupied</div></div>
-    <div class="stat-card"><div class="num">${Math.round(totalAv/total*100)}%</div><div class="lbl">Open rate</div></div>
-    <div class="stat-card"><div class="num amber">${myRes}</div><div class="lbl">My reservations</div></div>
-  `;
+// ── BELLINI BANNER ──
+function belliniHTML(){
+  return `<div class="bellini-banner">
+    <div class="bellini-logo">🏛️</div>
+    <div class="bellini-info">
+      <h3>Bellini AI College</h3>
+      <p>6th Floor is exclusively for <strong style="color:#4ade80">Bellini AI College</strong> advising, faculty offices, and college-specific rooms.<br>
+      <strong style="color:rgba(255,255,255,.7)">Not available for general student study.</strong> Please use Floors 1–5 for study spaces.</p>
+    </div>
+    <div class="bellini-tag">ADVISING ONLY</div>
+  </div>`;
+}
 
-  const floorData = Object.entries(FLOORS).map(([name, f]) => {
-    const seats = f.seats;
-    const oc = seats.filter(s => getSeatState(s.id)==='oc').length;
-    const pct = Math.round(oc/seats.length*100);
-    return {name, pct, noise: f.noise, nc: f.nc};
+function renderDashboard(){
+  let av=0,oc=0,my=0;
+  Object.entries(FLOORS).forEach(([,f])=>{
+    if(f.advising) return;
+    f.seats.forEach(s=>{
+      const st=getSeatState(s.id);
+      if(st==='av') av++; else oc++;
+      if(st==='mine') my++;
+    });
   });
-
-  document.getElementById('floorBars').innerHTML = floorData.map(f => {
-    const color = f.pct > 75 ? '#dc2626' : f.pct > 50 ? '#d97706' : '#006747';
+  const total=av+oc||1;
+  document.getElementById('statsGrid').innerHTML=`
+    <div class="stat-card"><div class="num green">${av}</div><div class="lbl">Available</div></div>
+    <div class="stat-card"><div class="num red">${oc}</div><div class="lbl">Occupied</div></div>
+    <div class="stat-card"><div class="num">${Math.round(av/total*100)}%</div><div class="lbl">Open rate</div></div>
+    <div class="stat-card"><div class="num amber">${my}</div><div class="lbl">My reservations</div></div>`;
+  document.getElementById('floorBars').innerHTML=Object.entries(FLOORS).map(([name,f])=>{
+    if(f.advising) return `<div class="floor-row">
+      <div class="floor-name">${name}</div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:100%;background:#6b7280"></div></div>
+      <div class="bar-pct">—</div>
+      <div class="noise-badge" style="background:#f3f4f6;color:#6b7280">advising</div>
+    </div>`;
+    const occN=f.seats.filter(s=>getSeatState(s.id)==='oc').length;
+    const pct=f.seats.length?Math.round(occN/f.seats.length*100):0;
+    const color=pct>75?'#dc2626':pct>50?'#d97706':'#006747';
     return `<div class="floor-row">
-      <div class="floor-name">${f.name}</div>
-      <div class="bar-wrap"><div class="bar-fill" style="width:${f.pct}%;background:${color}"></div></div>
-      <div class="bar-pct">${f.pct}%</div>
+      <div class="floor-name">${name}</div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="bar-pct">${pct}%</div>
       <div class="noise-badge ${f.nc}">${f.noise}</div>
     </div>`;
   }).join('');
 }
 
-function renderFloorTabs() {
-  document.getElementById('floorTabs').innerHTML = Object.keys(FLOORS).map(f =>
-    `<div class="ftab${f===curFloor?' on':''}" onclick="switchFloor('${f}')">${f}</div>`
+function renderFloorTabs(){
+  document.getElementById('floorTabs').innerHTML=Object.keys(FLOORS).map(f=>
+    `<div class="ftab${f===curFloor?' on':''}" onclick="switchFloor('${f}')">${f}${FLOORS[f].advising?' 🏛':''}</div>`
   ).join('');
 }
 
-function switchFloor(f) { curFloor=f; selSeat=null; renderFloorTabs(); renderMap(f); document.getElementById('seatDetail').innerHTML='<div class="placeholder-detail">Click a green seat to see details and reserve it.</div>'; }
-
-function renderMap(floorName) {
-  const fl = FLOORS[floorName];
-  const zones = [...new Set(fl.seats.map(s => s.zone))];
-  let html = '';
-  zones.forEach(zone => {
-    html += `<div class="zone-label">${zone}</div><div class="seats-grid">`;
-    fl.seats.filter(s => s.zone===zone).forEach(s => {
-      const st = getSeatState(s.id);
-      const isSel = selSeat && selSeat.id===s.id;
-      html += `<button class="seat-btn ${st}${isSel?' sel':''}" onclick="selectSeat('${s.id}')" ${st==='oc'?'disabled':''} title="${s.id}">
-        <span class="seat-icon">${ICONS[s.type]||'🪑'}</span>
-        <span class="seat-id">${s.id.split('-').slice(1).join('-')}</span>
-      </button>`;
-    });
-    html += '</div>';
-  });
-  document.getElementById('mapContainer').innerHTML = html;
+function switchFloor(f){
+  curFloor=f;selSeat=null;renderFloorTabs();renderMap(f);
+  if(!FLOORS[f].advising) document.getElementById('seatDetail').innerHTML='<div class="placeholder-detail">Click a green seat to see details and reserve it.</div>';
 }
 
-function selectSeat(id) {
-  const fl = FLOORS[curFloor];
-  const seat = fl.seats.find(s => s.id===id);
-  if (!seat) return;
-  selSeat = seat;
-  renderMap(curFloor);
+function renderMap(floorName){
+  const fl=FLOORS[floorName];
+  if(fl.advising){
+    document.getElementById('mapContainer').innerHTML=belliniHTML();
+    document.getElementById('seatDetail').innerHTML='<div class="placeholder-detail">This floor is reserved for Bellini AI College advising only.</div>';
+    return;
+  }
+  const noiseFilter=document.getElementById('noiseFilter').value;
+  const hidden=noiseFilter!=='all'&&fl.noise!==noiseFilter;
+  const zones=[...new Set(fl.seats.map(s=>s.zone))];
+  let html='';
+  if(hidden){
+    html=`<div style="text-align:center;padding:30px;color:#aaa;font-size:13px">No seats match the noise filter on this floor.<br><span style="font-size:11px">This floor is <strong>${fl.noise}</strong> noise level.</span></div>`;
+  } else {
+    zones.forEach(zone=>{
+      html+=`<div class="zone-label">${zone}</div><div class="seats-grid">`;
+      fl.seats.filter(s=>s.zone===zone).forEach(s=>{
+        const st=getSeatState(s.id);
+        const isSel=selSeat&&selSeat.id===s.id;
+        html+=`<button class="seat-btn ${st}${isSel?' sel':''}" onclick="selectSeat('${s.id}')" ${st==='oc'?'disabled':''} title="${s.id}">
+          <span class="seat-icon">${ICONS[s.type]||'🪑'}</span>
+          <span class="seat-id">${s.id.split('-').slice(1).join('-')}</span>
+        </button>`;
+      });
+      html+='</div>';
+    });
+  }
+  document.getElementById('mapContainer').innerHTML=html;
+}
 
-  const st = getSeatState(id);
-  const isMine = st === 'mine';
-  const isAv = st === 'av';
-  const res = reservations[id];
-
-  let timerHtml = '';
-  if (isMine && res) {
-    const left = Math.max(0, res.exp - Date.now());
-    const pct = Math.round(left/SESSION_MS*100);
-    const mins = Math.floor(left/60000);
-    const secs = Math.floor((left%60000)/1000);
-    const color = left < 15*60000 ? '#dc2626' : left < 30*60000 ? '#d97706' : '#006747';
-    timerHtml = `<div class="timer-wrap">
+function selectSeat(id){
+  const fl=FLOORS[curFloor];
+  const seat=fl.seats.find(s=>s.id===id);
+  if(!seat) return;
+  selSeat=seat;renderMap(curFloor);
+  const st=getSeatState(id);
+  const isMine=st==='mine';
+  const res=reservations[id];
+  let timerHtml='';
+  if(isMine&&res){
+    const left=Math.max(0,res.exp-Date.now());
+    const pct=Math.round(left/SESSION_MS*100);
+    const mins=Math.floor(left/60000);
+    const secs=Math.floor((left%60000)/1000);
+    const color=left<WARN_MS?'#dc2626':left<30*60000?'#d97706':'#006747';
+    timerHtml=`<div class="timer-wrap">
       <div class="timer-labels"><span>Session time</span><span style="color:${color};font-weight:700">${mins}:${secs<10?'0':''}${secs} left</span></div>
       <div class="timer-bar"><div class="timer-fill" style="width:${pct}%;background:${color}"></div></div>
     </div>`;
   }
-
-  let actions = '';
-  if (isAv) {
-    actions = `<button class="btn sm" onclick="reserveSeat('${id}')">Reserve this seat</button>`;
-  } else if (isMine) {
-    const ext = res && res.ext < 2;
-    actions = `
-      ${ext ? `<button class="btn sm amber" onclick="extendSeat('${id}')">+30 min</button>` : ''}
-      <button class="btn sm red" onclick="checkoutSeat('${id}')">Check out</button>
-    `;
-  }
-
-  const nearby = fl.seats.filter(s => s.id!==id && getSeatState(s.id)==='av').slice(0,3).map(s=>s.id).join(', ') || 'None on this floor';
-
-  document.getElementById('seatDetail').innerHTML = `
+  let actions='';
+  if(st==='av') actions=`<button class="btn sm" onclick="reserveSeat('${id}')">Reserve this seat</button>`;
+  else if(isMine) actions=`
+    ${res&&res.ext<2?`<button class="btn sm amber" onclick="extendSeat('${id}')">+30 min</button>`:''}
+    <button class="btn sm blue" onclick="showQR('${id}')">📱 QR checkout</button>
+    <button class="btn sm red" onclick="checkoutSeat('${id}')">Check out</button>`;
+  const nearby=fl.seats.filter(s=>s.id!==id&&getSeatState(s.id)==='av').slice(0,3).map(s=>s.id).join(', ')||'None on this floor';
+  document.getElementById('seatDetail').innerHTML=`
     <h3>${seat.id}</h3>
     <div class="floor-sub">${seat.zone} · ${curFloor}</div>
     <div class="detail-grid">
@@ -443,104 +688,134 @@ function selectSeat(id) {
       <div class="detail-item"><div class="dl">Nearby available</div><div class="dv" style="font-size:11px">${nearby}</div></div>
     </div>
     ${timerHtml}
-    <div class="action-btns">${actions}</div>
-  `;
+    <div class="action-btns">${actions}</div>`;
 }
 
-function reserveSeat(id) {
-  const seat = FLOORS[curFloor].seats.find(s=>s.id===id);
-  reservations[id] = {uid: user.id, name: user.name, floor: curFloor, reservedAt: Date.now(), exp: Date.now()+SESSION_MS, ext: 0};
-  selSeat = seat;
-  renderMap(curFloor); renderDashboard(); renderReservations();
-  selectSeat(id);
-  alert('✅ Seat ' + id + ' reserved! Your 2-hour session has started.');
+function reserveSeat(id){
+  const seat=FLOORS[curFloor].seats.find(s=>s.id===id);
+  reservations[id]={uid:user.id,name:user.name,floor:curFloor,reservedAt:Date.now(),exp:Date.now()+SESSION_MS,ext:0};
+  selSeat=seat;
+  renderMap(curFloor);renderDashboard();renderReservations();selectSeat(id);
 }
 
-function checkoutSeat(id) {
-  delete reservations[id];
-  selSeat = null;
-  renderMap(curFloor); renderDashboard(); renderReservations();
-  document.getElementById('seatDetail').innerHTML = '<div class="placeholder-detail">✅ Checked out! Seat is now available for others.</div>';
+function checkoutSeat(id){
+  delete reservations[id];warnShown[id]=false;selSeat=null;
+  document.getElementById('warnPopup').style.display='none';
+  renderMap(curFloor);renderDashboard();renderReservations();
+  document.getElementById('seatDetail').innerHTML='<div class="placeholder-detail">✅ Checked out! Seat is now available for others.</div>';
 }
 
-function extendSeat(id) {
-  if (!reservations[id] || reservations[id].ext >= 2) return;
-  reservations[id].exp += EXTEND_MS;
+function extendSeat(id){
+  if(!reservations[id]||reservations[id].ext>=2) return;
+  reservations[id].exp+=EXTEND_MS;
   reservations[id].ext++;
-  selectSeat(id);
-  renderReservations();
-  alert('⏱️ Session extended by 30 minutes! ' + (2-reservations[id].ext) + ' extensions remaining.');
+  warnShown[id]=false;
+  document.getElementById('warnPopup').style.display='none';
+  selectSeat(id);renderReservations();
 }
 
-function renderReservations() {
-  const mine = Object.entries(reservations).filter(([id,r]) => r.uid===user.id && Date.now()<r.exp);
-  const el = document.getElementById('resList');
-  if (!mine.length) {
-    el.innerHTML = '<div class="empty-res">🎫 No active reservations.<br><span style="font-size:12px">Go to the Seat Map tab to reserve a seat.</span></div>';
-    return;
-  }
-  el.innerHTML = mine.map(([id,r]) => {
-    const left = Math.max(0, r.exp - Date.now());
-    const pct = Math.round(left/SESSION_MS*100);
-    const mins = Math.floor(left/60000);
-    const secs = Math.floor((left%60000)/1000);
-    const color = left < 15*60000 ? '#dc2626' : left < 30*60000 ? '#d97706' : '#006747';
+function showQR(id){
+  warnSeatId=id;
+  const data='BULLSPACE|'+id+'|'+user.id+'|CHECKOUT';
+  document.getElementById('qrText').textContent=data;
+  drawQR(data);
+  document.getElementById('qrModal').style.display='flex';
+}
+
+function drawQR(data){
+  const canvas=document.getElementById('qrCanvas');
+  const ctx=canvas.getContext('2d');
+  const size=180,cells=21,cell=Math.floor(size/cells);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,size,size);
+  ctx.fillStyle='#006747';
+  const h=s=>{let v=0;for(let i=0;i<s.length;i++)v=(Math.imul(31,v)+s.charCodeAt(i))|0;return v;};
+  for(let r=0;r<cells;r++){for(let c=0;c<cells;c++){
+    const dark=Math.abs(h(data+r*37+c*13))%5<2||(r<7&&c<7)||(r<7&&c>cells-8)||(r>cells-8&&c<7);
+    if(dark) ctx.fillRect(c*cell,r*cell,cell,cell);
+  }}
+}
+
+function closeQR(e){if(e.target===document.getElementById('qrModal'))document.getElementById('qrModal').style.display='none';}
+function simScan(){
+  document.getElementById('qrModal').style.display='none';
+  if(warnSeatId) setTimeout(()=>{checkoutSeat(warnSeatId);alert('✅ QR scan successful! Seat '+warnSeatId+' has been released.');},500);
+}
+
+function extendFromWarn(){if(warnSeatId)extendSeat(warnSeatId);}
+function checkoutFromWarn(){if(warnSeatId)checkoutSeat(warnSeatId);}
+
+function checkWarnings(){
+  if(!user) return;
+  Object.entries(reservations).forEach(([id,r])=>{
+    if(r.uid!==user.id) return;
+    const left=r.exp-Date.now();
+    if(left>0&&left<=WARN_MS&&!warnShown[id]){
+      warnShown[id]=true;warnSeatId=id;
+      const mins=Math.floor(left/60000);
+      document.getElementById('warnMsg').textContent='Seat '+id+' expires in '+mins+' minutes!';
+      const popup=document.getElementById('warnPopup');
+      popup.style.display='block';
+      document.getElementById('warnExtBtn').style.display=r.ext<2?'block':'none';
+      setTimeout(()=>{if(popup.style.display==='block')popup.style.display='none';},10000);
+    }
+  });
+}
+
+function renderReservations(){
+  const mine=Object.entries(reservations).filter(([id,r])=>r.uid===user.id&&Date.now()<r.exp);
+  const el=document.getElementById('resList');
+  if(!mine.length){el.innerHTML='<div class="empty-res">🎫 No active reservations.<br><span style="font-size:12px">Go to the Seat Map tab to reserve a seat.</span></div>';return;}
+  el.innerHTML=mine.map(([id,r])=>{
+    const left=Math.max(0,r.exp-Date.now());
+    const pct=Math.round(left/SESSION_MS*100);
+    const mins=Math.floor(left/60000);
+    const secs=Math.floor((left%60000)/1000);
+    const color=left<WARN_MS?'#dc2626':left<30*60000?'#d97706':'#006747';
     return `<div class="res-card">
-      <div class="rh"><div><div class="rid">${id}</div><div class="rfloor">${r.floor} · Checked in at ${new Date(r.reservedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div></div><span class="pill mine">Active</span></div>
+      <div class="rh"><div><div class="rid">${id}</div><div class="rfloor">${r.floor} · Checked in ${new Date(r.reservedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div></div><span class="pill mine">Active</span></div>
       <div class="timer-wrap">
         <div class="timer-labels"><span>Time remaining</span><span style="color:${color};font-weight:700">${mins}:${secs<10?'0':''}${secs}</span></div>
         <div class="timer-bar"><div class="timer-fill" style="width:${pct}%;background:${color}"></div></div>
       </div>
       <div class="res-actions">
         ${r.ext<2?`<button class="btn sm amber" onclick="extendSeat('${id}')">+30 min (${2-r.ext} left)</button>`:'<span style="font-size:12px;color:#888">Max extensions used</span>'}
+        <button class="btn sm blue" onclick="showQR('${id}')">📱 QR checkout</button>
         <button class="btn sm red" onclick="checkoutSeat('${id}')">Check out</button>
       </div>
     </div>`;
   }).join('');
 }
 
-async function sendMsg() {
-  const input = document.getElementById('msgInput');
-  const btn = document.getElementById('sendBtn');
-  const text = input.value.trim();
-  if (!text) return;
-  input.value = ''; btn.disabled = true;
-  addMsg(text, 'user');
-  const typing = addMsg('BullSpace AI is thinking...', 'bot typing');
-  try {
-    const res = await fetch('/chat', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({student_id: user.id, message: text})
-    });
-    const data = await res.json();
-    typing.remove();
-    addMsg(data.response, 'bot');
-  } catch(e) {
-    typing.remove();
-    addMsg('Sorry, something went wrong. Please try again.', 'bot');
-  }
-  btn.disabled = false;
-  input.focus();
+async function sendMsg(){
+  const input=document.getElementById('msgInput');
+  const btn=document.getElementById('sendBtn');
+  const text=input.value.trim();
+  if(!text) return;
+  input.value='';btn.disabled=true;
+  addMsg(text,'user');
+  const typing=addMsg('BullSpace AI is thinking...','bot typing');
+  try{
+    const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:user.id,message:text})});
+    const data=await res.json();
+    typing.remove();addMsg(data.response,'bot');
+  }catch(e){typing.remove();addMsg('Sorry, something went wrong. Please try again in a moment.','bot');}
+  btn.disabled=false;input.focus();
 }
 
-function sendSug(text) { document.getElementById('msgInput').value = text; sendMsg(); }
-
-function addMsg(text, cls) {
-  const area = document.getElementById('chatArea');
-  const div = document.createElement('div');
-  div.className = 'msg ' + cls;
-  div.textContent = text;
-  area.appendChild(div);
-  area.scrollTop = area.scrollHeight;
-  return div;
+function sendSug(text){document.getElementById('msgInput').value=text;sendMsg();}
+function addMsg(text,cls){
+  const area=document.getElementById('chatArea');
+  const div=document.createElement('div');
+  div.className='msg '+cls;div.textContent=text;
+  area.appendChild(div);area.scrollTop=area.scrollHeight;return div;
 }
 
-setInterval(() => {
-  if (!user) return;
+setInterval(()=>{
+  if(!user) return;
   renderReservations();
-  if (selSeat) selectSeat(selSeat.id);
-}, 1000);
+  if(selSeat) selectSeat(selSeat.id);
+  checkWarnings();renderDashboard();
+},1000);
 </script>
 </body>
 </html>
