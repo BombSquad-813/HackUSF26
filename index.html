@@ -96,6 +96,10 @@ body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); min-heig
 .login-btn:hover { background:#008055; box-shadow:0 6px 28px rgba(0,103,71,.5); }
 .login-btn:hover::after { transform:translateX(100%); }
 .err { font-size:12px; color:#f87171; margin-top:8px; display:none; }
+.auth-tabs { display:flex; gap:0; margin-bottom:22px; background:rgba(255,255,255,.08); border-radius:10px; padding:3px; }
+.auth-tab { flex:1; padding:9px; text-align:center; font-size:13px; font-weight:600; color:rgba(255,255,255,.5); cursor:pointer; border-radius:8px; transition:all .2s; }
+.auth-tab.on { background:var(--g); color:#fff; box-shadow:0 2px 8px rgba(0,103,71,.4); }
+.success { font-size:12px; color:#4ade80; margin-top:8px; display:none; }
 
 /* ── APP ── */
 .app { display:none; position:relative; z-index:5; min-height:calc(100vh - 66px); }
@@ -389,11 +393,32 @@ body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); min-heig
   <div class="login-wrap">
     <div class="login-badge">SYSTEM ONLINE</div>
     <h2>Welcome to BullSpace AI</h2>
-    <p>Sign in with your USF Student ID to find your perfect study spot across all 6 floors.</p>
-    <div class="field"><label>Student ID</label><input type="text" id="sidIn" placeholder="U12345678" maxlength="10"></div>
-    <div class="field"><label>Full Name</label><input type="text" id="nmIn" placeholder="Your name" maxlength="40"></div>
-    <div class="err" id="loginErr">Please enter a valid Student ID (U + 8 digits) and your name.</div>
-    <button class="login-btn" onclick="login()">Find My Study Space →</button>
+    <p>USF Tampa Campus Library — find your perfect study spot.</p>
+
+    <!-- Auth tabs -->
+    <div class="auth-tabs">
+      <div class="auth-tab on" onclick="switchAuth('login',this)">Sign In</div>
+      <div class="auth-tab" onclick="switchAuth('register',this)">Register</div>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div id="loginForm">
+      <div class="field"><label>Student ID</label><input type="text" id="sidIn" placeholder="U12345678" maxlength="10"></div>
+      <div class="field"><label>Password</label><input type="password" id="pwIn" placeholder="Your password"></div>
+      <div class="err" id="loginErr">Invalid Student ID or password.</div>
+      <button class="login-btn" onclick="login()">Sign In →</button>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div id="registerForm" style="display:none">
+      <div class="field"><label>Student ID</label><input type="text" id="regSid" placeholder="U12345678" maxlength="10"></div>
+      <div class="field"><label>Full Name</label><input type="text" id="regName" placeholder="Your full name" maxlength="40"></div>
+      <div class="field"><label>Password</label><input type="password" id="regPw" placeholder="Choose a password"></div>
+      <div class="field"><label>Confirm Password</label><input type="password" id="regPw2" placeholder="Repeat password"></div>
+      <div class="err" id="regErr">Please fill all fields correctly.</div>
+      <div class="success" id="regOk">Account created! You can now sign in.</div>
+      <button class="login-btn" onclick="register()">Create Account →</button>
+    </div>
   </div>
 </div>
 
@@ -502,7 +527,7 @@ body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); min-heig
         <div class="sug" onclick="ss('Find me a quiet seat with a charger')">🤫 Quiet + charger</div>
         <div class="sug" onclick="ss('I need a group table for 4 people')">👥 Group table</div>
         <div class="sug" onclick="ss('Find me a computer station')">💻 Computer</div>
-        <div class="sug" onclick="ss(\'Where can I get coffee?\')">☕ Coffee</div>
+        <div class="sug" onclick="ss('Where can I get coffee?')">☕ Coffee</div>
         <div class="sug" onclick="ss('Library hours today')">🕐 Hours</div>
         <div class="sug" onclick="ss('Tell me about the Bellini AI College on the 6th floor')">🏛 Bellini</div>
       </div>
@@ -652,19 +677,8 @@ function clearHistory(){lsSet('bs_history_'+(user?.id||''),[]);renderHistory();}
 
 // ── OCC ──
 function rndOcc(){return Math.random()<0.35;}
-async function initOcc(){
-  try{
-    for(let floor=1;floor<=5;floor++){
-      const res=await fetch(`https://libraryspot.onrender.com/api/seats?floor=${floor}`);
-      if(!res.ok) throw new Error('API error');
-      const seats=await res.json();
-      seats.forEach(s=>{ occ[s.id]=s.status==='taken'; });
-    }
-    console.log('Live seat data loaded from LibrarySpot');
-  }catch(e){
-    console.log('LibrarySpot offline, using simulation');
-    Object.values(FLOORS).forEach(f=>{if(!f.adv)f.seats.forEach(s=>{if(!occ[s.id])occ[s.id]=rndOcc();});});
-  }
+function initOcc(){
+  Object.values(FLOORS).forEach(f=>{if(!f.adv)f.seats.forEach(s=>{if(!occ[s.id])occ[s.id]=rndOcc();});});
 }
 function getState(id){
   if(res[id]){
@@ -687,19 +701,58 @@ function toggleA11y(){
   document.getElementById('a11yBtn').textContent=a11yOn?'♿ Standard':'♿ Accessibility';
 }
 
-// ── LOGIN / LOGOUT ──
+// ── AUTH ──
+function switchAuth(tab, el){
+  document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('loginForm').style.display=tab==='login'?'block':'none';
+  document.getElementById('registerForm').style.display=tab==='register'?'block':'none';
+}
+
+function register(){
+  const sid=document.getElementById('regSid').value.trim();
+  const nm=document.getElementById('regName').value.trim();
+  const pw=document.getElementById('regPw').value;
+  const pw2=document.getElementById('regPw2').value;
+  const errEl=document.getElementById('regErr');
+  const okEl=document.getElementById('regOk');
+  errEl.style.display='none'; okEl.style.display='none';
+  if(!/^U\d{8}$/.test(sid)){errEl.textContent='Student ID must be U + 8 digits (e.g. U12345678)';errEl.style.display='block';return;}
+  if(!nm){errEl.textContent='Please enter your full name.';errEl.style.display='block';return;}
+  if(pw.length<4){errEl.textContent='Password must be at least 4 characters.';errEl.style.display='block';return;}
+  if(pw!==pw2){errEl.textContent='Passwords do not match.';errEl.style.display='block';return;}
+  const users=lsGet('bs_users')||{};
+  if(users[sid]){errEl.textContent='This Student ID is already registered.';errEl.style.display='block';return;}
+  users[sid]={name:nm,pw:btoa(pw)};
+  lsSet('bs_users',users);
+  okEl.style.display='block';
+  document.getElementById('regSid').value='';
+  document.getElementById('regName').value='';
+  document.getElementById('regPw').value='';
+  document.getElementById('regPw2').value='';
+  setTimeout(()=>{
+    document.querySelector('.auth-tab').click();
+    document.getElementById('sidIn').value=sid;
+  },1200);
+}
+
 function login(){
   const sid=document.getElementById('sidIn').value.trim();
-  const nm=document.getElementById('nmIn').value.trim();
-  if(!/^U\d{8}$/.test(sid)||!nm){document.getElementById('loginErr').style.display='block';return;}
-  user={id:sid,name:nm};
-  document.getElementById('loginErr').style.display='none';
+  const pw=document.getElementById('pwIn').value;
+  const errEl=document.getElementById('loginErr');
+  errEl.style.display='none';
+  if(!/^U\d{8}$/.test(sid)){errEl.textContent='Please enter a valid Student ID (U + 8 digits).';errEl.style.display='block';return;}
+  const users=lsGet('bs_users')||{};
+  const acct=users[sid];
+  if(!acct||btoa(pw)!==acct.pw){errEl.textContent='Student ID or password not found. Please register first.';errEl.style.display='block';return;}
+  user={id:sid,name:acct.name};
+  errEl.style.display='none';
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('appScreen').style.display='block';
   document.getElementById('gridBg').style.display='none';
   document.getElementById('appGrid').style.display='block';
-  document.getElementById('userLbl').textContent=nm+' ('+sid+')';
-  initOcc();renderDashboard();renderFloorTabs();renderMap(curFloor);
+  document.getElementById('userLbl').textContent=acct.name+' ('+sid+')';
+  initOcc().then(()=>{renderDashboard();renderFloorTabs();renderMap(curFloor);});
   renderReservations();renderTutoring();renderGroups();renderHistory();
 }
 function logout(){
@@ -856,14 +909,20 @@ function selectSeat(id){
 function reserveSeat(id){
   const seat=FLOORS[curFloor].seats.find(s=>s.id===id);
   const now=Date.now();
+  const existing=Object.keys(res).find(k=>res[k].uid===user.id);
+  if(existing){
+    const r=res[existing];
+    const dur=Math.round((Date.now()-r.reservedAt)/60000);
+    addHistory({seat:existing,floor:r.floor,
+      checkin:new Date(r.reservedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+      checkout:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+      duration:dur,date:new Date().toLocaleDateString()});
+    occ[existing]=false;
+    delete res[existing];
+  }
   res[id]={uid:user.id,name:user.name,floor:curFloor,reservedAt:now,exp:now+S_MS,ext:0};
   occ[id]=true;
   selSeat=seat;
-  fetch('https://libraryspot.onrender.com/api/seats/reserve',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+(lsGet('ls_token')||'')},
-    body:JSON.stringify({seatId:id})
-  }).catch(()=>{});
   renderMap(curFloor);renderDashboard();renderReservations();renderFloorTabs();selectSeat(id);
 }
 
@@ -875,10 +934,6 @@ function checkoutSeat(id){
       checkout:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),duration:dur,date:new Date().toLocaleDateString()});
   }
   delete res[id];occ[id]=false;warnShown[id]=false;selSeat=null;
-  fetch('https://libraryspot.onrender.com/api/seats/leave',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+(lsGet('ls_token')||'')}
-  }).catch(()=>{});
   document.getElementById('warnPop').style.display='none';
   renderMap(curFloor);renderDashboard();renderReservations();renderFloorTabs();
   document.getElementById('sdetail').innerHTML='<div class="pholder">✅ Checked out! Seat is now available for others.</div>';
