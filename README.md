@@ -208,19 +208,6 @@ root_agent = LlmAgent(
 
 ---
 
-## 👥 Team
-
-Built in under 24 hours at **HackUSF26** by four USF students — three of us hacking for the very first time.
-
-| Name | Role |
-|---|---|
-| Haneen | AI backend, FastAPI, deployment, frontend |
-| Thu | Frontend, UI design |
-| Natalia | Research, data, presentation |
-| Hana | Frontend, testing |
-
----
-
 ## 📄 License
 
 Built for HackUSF26. All rights reserved by the BombSquad-813 team.
