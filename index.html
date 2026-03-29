@@ -6,358 +6,379 @@
 <title>BullSpace AI — USF Smart Library</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --usf-green: #006747;
-    --usf-dark: #004d34;
-    --usf-gold: #CFC493;
-    --grid-color: rgba(0, 103, 71, 0.15);
-    --grid-size: 40px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Space Grotesk', sans-serif; background: #f0f2f5; min-height: 100vh; }
+:root {
+  --g: #006747; --gd: #004d34; --gl: #d1fae5;
+  --gc: rgba(0,103,71,0.12); --gs: 40px;
+  --bg: #f0f2f5; --white: #fff;
+  --red: #dc2626; --amber: #d97706; --blue: #1d4ed8;
+  --text: #1f2937; --muted: #6b7280;
+  --fs: 1rem; --radius: 12px;
+}
+.a11y { --fs: 1.18rem; --radius: 10px; filter: contrast(1.15); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); min-height: 100vh; font-size: var(--fs); transition: filter .3s; }
 
-  /* ── ANIMATED GRID BACKGROUND ── */
-  .grid-bg {
-    position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
-    background: #001a0f;
-  }
-  .grid-bg::before {
-    content: '';
-    position: absolute; inset: -50%;
-    background-image:
-      linear-gradient(var(--grid-color) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
-    background-size: var(--grid-size) var(--grid-size);
-    animation: gridMove 8s linear infinite;
-  }
-  .grid-bg::after {
-    content: '';
-    position: absolute; inset: 0;
-    background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(0,103,71,0.18) 0%, transparent 70%);
-    animation: pulse-glow 4s ease-in-out infinite;
-  }
-  @keyframes gridMove { from{transform:translate(0,0)} to{transform:translate(var(--grid-size),var(--grid-size))} }
-  @keyframes pulse-glow { 0%,100%{opacity:.6} 50%{opacity:1} }
+/* ── GRID BG ── */
+.grid-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: #001a0f; }
+.grid-bg::before { content: ''; position: absolute; inset: -50%;
+  background-image: linear-gradient(var(--gc) 1px,transparent 1px), linear-gradient(90deg,var(--gc) 1px,transparent 1px);
+  background-size: var(--gs) var(--gs); animation: gm 8s linear infinite; }
+.grid-bg::after { content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(0,103,71,.18) 0%, transparent 70%);
+  animation: pg 4s ease-in-out infinite; }
+@keyframes gm { from{transform:translate(0,0)} to{transform:translate(var(--gs),var(--gs))} }
+@keyframes pg  { 0%,100%{opacity:.6} 50%{opacity:1} }
+.scan-line { position: absolute; left:0; right:0; height:2px;
+  background: linear-gradient(90deg,transparent,rgba(0,255,140,.4),transparent);
+  animation: scan 6s linear infinite; }
+@keyframes scan { from{top:-2px} to{top:100%} }
+.grid-dot { position:absolute; width:3px; height:3px; border-radius:50%; background:rgba(0,255,140,.6);
+  animation: dp var(--dur,3s) ease-in-out infinite; animation-delay:var(--delay,0s); }
+@keyframes dp { 0%,100%{opacity:0;transform:scale(0)} 50%{opacity:1;transform:scale(1)} }
 
-  .grid-dots {
-    position: absolute; inset: 0; overflow: hidden;
-  }
-  .grid-dot {
-    position: absolute; width: 3px; height: 3px; border-radius: 50%;
-    background: rgba(0,255,140,0.6);
-    animation: dot-pulse var(--dur, 3s) ease-in-out infinite;
-    animation-delay: var(--delay, 0s);
-  }
-  @keyframes dot-pulse { 0%,100%{opacity:0;transform:scale(0)} 50%{opacity:1;transform:scale(1)} }
+/* app grid — subtle */
+.app-grid { position:fixed; inset:0; z-index:0; pointer-events:none; }
+.app-grid::before { content:''; position:absolute; inset:-50%;
+  background-image: linear-gradient(rgba(0,103,71,.045) 1px,transparent 1px), linear-gradient(90deg,rgba(0,103,71,.045) 1px,transparent 1px);
+  background-size:30px 30px; animation: gm2 12s linear infinite; }
+@keyframes gm2 { from{transform:translate(0,0)} to{transform:translate(30px,30px)} }
 
-  .scan-line {
-    position: absolute; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, transparent, rgba(0,255,140,0.4), transparent);
-    animation: scan 6s linear infinite;
-  }
-  @keyframes scan { from{top:-2px} to{top:100%} }
+/* ── HEADER ── */
+.header { position:relative; overflow:hidden; background:var(--gd); color:#fff; padding:13px 20px;
+  display:flex; align-items:center; gap:12px; z-index:10; box-shadow:0 2px 20px rgba(0,0,0,.4); }
+.hgrid { position:absolute; inset:0; pointer-events:none;
+  background-image: linear-gradient(rgba(0,103,71,.25) 1px,transparent 1px), linear-gradient(90deg,rgba(0,103,71,.25) 1px,transparent 1px);
+  background-size:20px 20px; animation: gm 5s linear infinite; }
+.hglow { position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(ellipse 40% 100% at 10% 50%,rgba(0,255,140,.08) 0%,transparent 60%); }
+.bull { position:relative; z-index:1; width:38px; height:38px; background:#fff; border-radius:8px;
+  display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;
+  box-shadow:0 0 16px rgba(0,255,140,.3); }
+.brand { position:relative; z-index:1; font-size:17px; font-weight:700; letter-spacing:-.3px; }
+.sub { position:relative; z-index:1; font-size:10px; opacity:.65; font-family:'JetBrains Mono',monospace; }
+.hright { position:relative; z-index:1; margin-left:auto; display:flex; align-items:center; gap:10px; }
+.status-dot { width:8px; height:8px; background:#4ade80; border-radius:50%;
+  animation:sd 2s infinite; box-shadow:0 0 8px #4ade80; }
+@keyframes sd { 0%,100%{opacity:1;box-shadow:0 0 8px #4ade80} 50%{opacity:.5;box-shadow:0 0 2px #4ade80} }
+.a11y-btn { background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff;
+  padding:4px 10px; border-radius:8px; font-size:11px; cursor:pointer; font-family:'Space Grotesk',sans-serif;
+  transition:background .2s; }
+.a11y-btn:hover { background:rgba(255,255,255,.25); }
 
-  /* ── HEADER (with subtle grid) ── */
-  .header {
-    position: relative; overflow: hidden;
-    background: var(--usf-dark);
-    color: #fff; padding: 14px 20px;
-    display: flex; align-items: center; gap: 12px;
-    z-index: 10; box-shadow: 0 2px 20px rgba(0,0,0,.4);
-  }
-  .header-grid {
-    position: absolute; inset: 0; pointer-events: none;
-    background-image:
-      linear-gradient(rgba(0,103,71,0.2) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,103,71,0.2) 1px, transparent 1px);
-    background-size: 20px 20px;
-    animation: gridMove 4s linear infinite;
-  }
-  .header-glow {
-    position: absolute; inset: 0; pointer-events: none;
-    background: radial-gradient(ellipse 40% 100% at 10% 50%, rgba(0,255,140,0.08) 0%, transparent 60%);
-  }
-  .bull {
-    position: relative; z-index: 1;
-    width: 38px; height: 38px; background: #fff; border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px; flex-shrink: 0;
-    box-shadow: 0 0 16px rgba(0,255,140,0.3);
-  }
-  .brand { position: relative; z-index: 1; font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
-  .sub { position: relative; z-index: 1; font-size: 11px; opacity: .7; font-family: 'JetBrains Mono', monospace; }
-  .status-dot {
-    width: 8px; height: 8px; background: #4ade80; border-radius: 50%;
-    margin-left: auto; position: relative; z-index: 1;
-    animation: pulse-dot 2s infinite;
-    box-shadow: 0 0 8px #4ade80;
-  }
-  @keyframes pulse-dot { 0%,100%{opacity:1;box-shadow:0 0 8px #4ade80} 50%{opacity:.5;box-shadow:0 0 2px #4ade80} }
+/* ── LOGIN ── */
+.login-outer { position:relative; z-index:10; min-height:calc(100vh - 66px);
+  display:flex; align-items:center; justify-content:center; padding:20px; }
+.login-wrap { background:rgba(0,20,10,.88); backdrop-filter:blur(16px);
+  border:1px solid rgba(0,255,140,.2); border-radius:20px; padding:36px;
+  width:100%; max-width:420px; box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 40px rgba(0,103,71,.15); }
+.login-badge { display:inline-flex; align-items:center; gap:6px;
+  background:rgba(0,103,71,.3); border:1px solid rgba(0,255,140,.3); border-radius:20px;
+  padding:4px 12px; font-size:11px; color:#4ade80; font-family:'JetBrains Mono',monospace;
+  margin-bottom:20px; letter-spacing:1px; }
+.login-badge::before { content:'●'; font-size:8px; animation:sd 2s infinite; }
+.login-wrap h2 { color:#fff; font-size:24px; font-weight:700; margin-bottom:6px; letter-spacing:-.5px; }
+.login-wrap p { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:24px; }
+.field { margin-bottom:16px; }
+.field label { display:block; font-size:11px; font-weight:600; color:rgba(255,255,255,.5);
+  margin-bottom:6px; text-transform:uppercase; letter-spacing:1px; font-family:'JetBrains Mono',monospace; }
+.field input, .field select { width:100%; padding:11px 14px; background:rgba(255,255,255,.06);
+  border:1px solid rgba(0,255,140,.2); border-radius:10px; font-size:14px; color:#fff;
+  outline:none; font-family:'Space Grotesk',sans-serif; transition:border-color .2s,box-shadow .2s; }
+.field input::placeholder { color:rgba(255,255,255,.25); }
+.field input:focus,.field select:focus { border-color:rgba(0,255,140,.5); box-shadow:0 0 0 3px rgba(0,255,140,.1); }
+.field select option { background:#001a0f; color:#fff; }
+.login-btn { width:100%; padding:13px; background:var(--g); color:#fff; border:none; border-radius:10px;
+  font-size:15px; font-weight:700; cursor:pointer; font-family:'Space Grotesk',sans-serif;
+  transition:all .2s; position:relative; overflow:hidden; box-shadow:0 4px 20px rgba(0,103,71,.4); }
+.login-btn::after { content:''; position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);
+  transform:translateX(-100%); transition:transform .4s; }
+.login-btn:hover { background:#008055; box-shadow:0 6px 28px rgba(0,103,71,.5); }
+.login-btn:hover::after { transform:translateX(100%); }
+.err { font-size:12px; color:#f87171; margin-top:8px; display:none; }
 
-  /* ── LOGIN ── */
-  .login-outer {
-    position: relative; z-index: 10;
-    min-height: calc(100vh - 66px);
-    display: flex; align-items: center; justify-content: center;
-    padding: 20px;
-  }
-  .login-wrap {
-    background: rgba(0, 20, 10, 0.85);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(0,255,140,0.2);
-    border-radius: 20px; padding: 36px;
-    width: 100%; max-width: 420px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.5), 0 0 40px rgba(0,103,71,0.15);
-  }
-  .login-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(0,103,71,0.3); border: 1px solid rgba(0,255,140,0.3);
-    border-radius: 20px; padding: 4px 12px;
-    font-size: 11px; color: #4ade80;
-    font-family: 'JetBrains Mono', monospace;
-    margin-bottom: 20px; letter-spacing: 1px;
-  }
-  .login-badge::before { content: '●'; font-size: 8px; animation: pulse-dot 2s infinite; }
-  .login-wrap h2 { color: #fff; font-size: 24px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.5px; }
-  .login-wrap p { font-size: 13px; color: rgba(255,255,255,.5); margin-bottom: 24px; }
-  .field { margin-bottom: 16px; }
-  .field label { display: block; font-size: 11px; font-weight: 600; color: rgba(255,255,255,.5); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; font-family: 'JetBrains Mono', monospace; }
-  .field input, .field select {
-    width: 100%; padding: 11px 14px;
-    background: rgba(255,255,255,.06);
-    border: 1px solid rgba(0,255,140,0.2);
-    border-radius: 10px; font-size: 14px;
-    color: #fff; outline: none;
-    font-family: 'Space Grotesk', sans-serif;
-    transition: border-color .2s, box-shadow .2s;
-  }
-  .field input::placeholder { color: rgba(255,255,255,.25); }
-  .field input:focus, .field select:focus {
-    border-color: rgba(0,255,140,0.5);
-    box-shadow: 0 0 0 3px rgba(0,255,140,0.1);
-  }
-  .field select option { background: #001a0f; color: #fff; }
-  .login-btn {
-    width: 100%; padding: 13px;
-    background: var(--usf-green);
-    color: #fff; border: none; border-radius: 10px;
-    font-size: 15px; font-weight: 700; cursor: pointer;
-    font-family: 'Space Grotesk', sans-serif;
-    transition: all .2s; position: relative; overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0,103,71,0.4);
-    letter-spacing: 0.3px;
-  }
-  .login-btn::after {
-    content: ''; position: absolute; inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-    transform: translateX(-100%); transition: transform .4s;
-  }
-  .login-btn:hover { background: #008055; box-shadow: 0 6px 28px rgba(0,103,71,0.5); }
-  .login-btn:hover::after { transform: translateX(100%); }
-  .err { font-size: 12px; color: #f87171; margin-top: 8px; display: none; }
+/* ── APP ── */
+.app { display:none; position:relative; z-index:5; min-height:calc(100vh - 66px); }
+.user-bar { background:var(--gd); color:#fff; padding:8px 20px; font-size:12px;
+  display:flex; align-items:center; gap:10px; font-family:'JetBrains Mono',monospace; position:relative; z-index:6; }
+.user-bar button { background:none; border:1px solid rgba(255,255,255,.3); color:#fff;
+  padding:3px 10px; border-radius:10px; font-size:11px; cursor:pointer; font-family:'Space Grotesk',sans-serif; }
+.nav-tabs { display:flex; background:rgba(255,255,255,.95); backdrop-filter:blur(8px);
+  border-bottom:2px solid #e5e7eb; padding:0 16px; overflow-x:auto; position:relative; z-index:6; }
+.tab { padding:11px 14px; font-size:12px; font-weight:600; color:#666; cursor:pointer;
+  border-bottom:3px solid transparent; margin-bottom:-2px; white-space:nowrap; transition:all .2s; }
+.tab.on { color:var(--g); border-color:var(--g); }
+.panel { display:none; padding:18px; position:relative; z-index:5; }
+.panel.on { display:block; }
 
-  /* ── APP ── */
-  .app { display: none; position: relative; z-index: 5; background: #f0f2f5; min-height: calc(100vh - 66px); }
-  .user-bar { background: var(--usf-dark); color: #fff; padding: 8px 20px; font-size: 12px; display: flex; align-items: center; gap: 10px; font-family: 'JetBrains Mono', monospace; }
-  .user-bar button { margin-left: auto; background: none; border: 1px solid rgba(255,255,255,.3); color: #fff; padding: 3px 10px; border-radius: 10px; font-size: 11px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; }
-  .nav-tabs { display: flex; background: #fff; border-bottom: 2px solid #e5e7eb; padding: 0 20px; overflow-x: auto; }
-  .tab { padding: 12px 18px; font-size: 13px; font-weight: 600; color: #666; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: all .2s; }
-  .tab.on { color: var(--usf-green); border-color: var(--usf-green); }
-  .panel { display: none; padding: 20px; }
-  .panel.on { display: block; }
+/* cards */
+.card { background:rgba(255,255,255,.95); backdrop-filter:blur(8px); border-radius:var(--radius);
+  padding:18px; box-shadow:0 2px 12px rgba(0,0,0,.08); border:1px solid rgba(255,255,255,.8); margin-bottom:14px; }
+.card h3 { font-size:14px; font-weight:700; color:var(--text); margin-bottom:12px; }
 
-  /* ── BELLINI BANNER ── */
-  .bellini-banner {
-    background: linear-gradient(135deg, #001a0f 0%, #003320 50%, #001a0f 100%);
-    border: 1px solid rgba(0,255,140,0.2);
-    border-radius: 14px; padding: 20px 24px;
-    margin-bottom: 20px;
-    display: flex; align-items: center; gap: 20px;
-    position: relative; overflow: hidden;
-  }
-  .bellini-banner::before {
-    content: '';
-    position: absolute; inset: 0;
-    background-image: linear-gradient(rgba(0,103,71,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(0,103,71,0.15) 1px, transparent 1px);
-    background-size: 20px 20px;
-  }
-  .bellini-logo {
-    position: relative; z-index: 1;
-    width: 64px; height: 64px; background: var(--usf-green);
-    border-radius: 14px; display: flex; align-items: center; justify-content: center;
-    font-size: 32px; flex-shrink: 0;
-    box-shadow: 0 0 20px rgba(0,103,71,0.4);
-  }
-  .bellini-info { position: relative; z-index: 1; flex: 1; }
-  .bellini-info h3 { color: #fff; font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-  .bellini-info p { color: rgba(255,255,255,.6); font-size: 13px; line-height: 1.5; }
-  .bellini-tag {
-    position: relative; z-index: 1;
-    background: rgba(0,255,140,0.1); border: 1px solid rgba(0,255,140,0.3);
-    color: #4ade80; font-size: 11px; font-weight: 700;
-    padding: 4px 12px; border-radius: 20px;
-    font-family: 'JetBrains Mono', monospace;
-    white-space: nowrap;
-  }
+/* stats */
+.stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+.stat-card { background:rgba(255,255,255,.95); border-radius:var(--radius); padding:14px;
+  text-align:center; box-shadow:0 2px 8px rgba(0,0,0,.06); border:1px solid #e5e7eb; }
+.stat-card .num { font-size:26px; font-weight:700; }
+.num.green{color:var(--g)}.num.red{color:var(--red)}.num.amber{color:var(--amber)}
+.stat-card .lbl { font-size:10px; color:var(--muted); margin-top:3px; text-transform:uppercase; letter-spacing:.5px; }
 
-  /* ── DASHBOARD ── */
-  .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
-  .stat-card { background: #fff; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.06); border: 1px solid #e5e7eb; }
-  .stat-card .num { font-size: 28px; font-weight: 700; }
-  .num.green{color:#006747}.num.red{color:#dc2626}.num.amber{color:#d97706}
-  .stat-card .lbl { font-size: 11px; color: #888; margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
-  .floor-bars { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
-  .floor-bars h3 { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 14px; }
-  .floor-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-  .floor-name { font-size: 12px; color: #444; width: 80px; flex-shrink: 0; }
-  .bar-wrap { flex: 1; height: 10px; background: #e5e7eb; border-radius: 5px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 5px; transition: width 1s; }
-  .bar-pct { font-size: 11px; color: #888; width: 36px; text-align: right; flex-shrink: 0; }
-  .noise-badge { font-size: 10px; padding: 2px 7px; border-radius: 8px; flex-shrink: 0; }
-  .noise-quiet{background:#ede9fe;color:#5b21b6}
-  .noise-low{background:#d1fae5;color:#065f46}
-  .noise-mod{background:#fef3c7;color:#92400e}
-  .noise-cas{background:#dbeafe;color:#1e40af}
+/* floor bars */
+.floor-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.floor-name { font-size:12px; color:var(--text); width:76px; flex-shrink:0; }
+.bar-wrap { flex:1; height:9px; background:#e5e7eb; border-radius:5px; overflow:hidden; }
+.bar-fill { height:100%; border-radius:5px; transition:width 1s; }
+.bar-pct { font-size:11px; color:var(--muted); width:34px; text-align:right; flex-shrink:0; }
+.nbadge { font-size:10px; padding:2px 6px; border-radius:8px; flex-shrink:0; }
+.nq{background:#ede9fe;color:#5b21b6}.nl{background:#d1fae5;color:#065f46}
+.nm{background:#fef3c7;color:#92400e}.nc{background:#dbeafe;color:#1e40af}
 
-  /* ── SEAT MAP ── */
-  .map-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
-  .floor-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-  .ftab { padding: 6px 14px; font-size: 12px; font-weight: 600; border: 2px solid #ddd; border-radius: 20px; cursor: pointer; background: #fff; color: #666; transition: all .2s; }
-  .ftab.on { background: var(--usf-green); color: #fff; border-color: var(--usf-green); }
-  .noise-filter { padding: 6px 12px; border: 2px solid #ddd; border-radius: 20px; font-size: 12px; font-weight: 600; color: #555; background: #fff; cursor: pointer; outline: none; }
-  .noise-filter:focus { border-color: var(--usf-green); }
-  .legend { display: flex; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
-  .leg { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #555; }
-  .leg-dot { width: 14px; height: 14px; border-radius: 4px; }
-  .leg-dot.av{background:#006747}.leg-dot.oc{background:#dc2626}.leg-dot.mine{background:#d97706}
-  .map-container { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.06); margin-bottom: 16px; }
-  .zone-label { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px; margin-top: 16px; }
-  .zone-label:first-child { margin-top: 0; }
-  .seats-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
-  .seat-btn { width: 56px; height: 52px; border-radius: 8px; border: 2px solid transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 9px; font-weight: 700; transition: all .15s; position: relative; }
-  .seat-btn.av { background: #d1fae5; border-color: #006747; color: #065f46; }
-  .seat-btn.av:hover { transform: scale(1.1); box-shadow: 0 4px 12px rgba(0,103,71,.3); }
-  .seat-btn.oc { background: #fee2e2; border-color: #dc2626; color: #991b1b; cursor: not-allowed; opacity: .7; }
-  .seat-btn.mine { background: #fef3c7; border-color: #d97706; color: #92400e; }
-  .seat-btn.sel { transform: scale(1.12); box-shadow: 0 0 0 3px #006747; }
-  .seat-icon { font-size: 16px; line-height: 1; }
-  .seat-id { font-size: 8px; margin-top: 2px; }
-  .seat-detail { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
-  .seat-detail h3 { font-size: 16px; font-weight: 700; color: #333; margin-bottom: 4px; }
-  .seat-detail .floor-sub { font-size: 12px; color: #888; margin-bottom: 14px; }
-  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-  .detail-item { background: #f9fafb; border-radius: 8px; padding: 10px; }
-  .detail-item .dl { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; }
-  .detail-item .dv { font-size: 13px; font-weight: 600; color: #333; }
-  .action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
-  .placeholder-detail { text-align: center; padding: 30px; color: #aaa; font-size: 13px; }
-  .btn { padding: 11px 20px; background: var(--usf-green); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Space Grotesk', sans-serif; transition: all .2s; }
-  .btn:hover { background: #005538; }
-  .btn.sm { padding: 7px 16px; font-size: 12px; }
-  .btn.red{background:#dc2626}.btn.red:hover{background:#b91c1c}
-  .btn.amber{background:#d97706}.btn.amber:hover{background:#b45309}
-  .btn.blue{background:#1d4ed8}.btn.blue:hover{background:#1e40af}
-  .timer-wrap { margin-bottom: 12px; }
-  .timer-labels { display: flex; justify-content: space-between; font-size: 11px; color: #888; margin-bottom: 4px; }
-  .timer-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
-  .timer-fill { height: 100%; border-radius: 4px; transition: width .5s, background .5s; }
+/* seat map */
+.map-controls { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+.ftabs { display:flex; gap:5px; flex-wrap:wrap; }
+.ftab { padding:5px 11px; font-size:11px; font-weight:600; border:2px solid #ddd; border-radius:20px;
+  cursor:pointer; background:rgba(255,255,255,.9); color:#666; transition:all .2s; white-space:nowrap; }
+.ftab.on { background:var(--g); color:#fff; border-color:var(--g); }
+.nfilter { padding:5px 11px; border:2px solid #ddd; border-radius:20px; font-size:11px;
+  font-weight:600; color:#555; background:rgba(255,255,255,.9); cursor:pointer; outline:none; }
+.nfilter:focus { border-color:var(--g); }
+.legend { display:flex; gap:14px; margin-bottom:12px; flex-wrap:wrap; }
+.leg { display:flex; align-items:center; gap:4px; font-size:12px; color:#555; }
+.ldot { width:12px; height:12px; border-radius:3px; }
+.ldot.av{background:var(--g)}.ldot.oc{background:var(--red)}.ldot.mine{background:var(--amber)}
+.map-container { background:rgba(255,255,255,.95); border-radius:var(--radius); padding:18px;
+  box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:14px; }
+.zlabel { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase;
+  letter-spacing:.8px; margin-bottom:7px; margin-top:14px; }
+.zlabel:first-child { margin-top:0; }
+.sgrid { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:4px; }
+.sbtn { width:54px; height:50px; border-radius:8px; border:2px solid transparent;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  cursor:pointer; font-weight:700; transition:all .15s; position:relative; }
+.sbtn.av { background:#d1fae5; border-color:var(--g); color:#065f46; }
+.sbtn.av:hover { transform:scale(1.1); box-shadow:0 4px 12px rgba(0,103,71,.3); }
+.sbtn.oc { background:#fee2e2; border-color:var(--red); color:#991b1b; cursor:not-allowed; opacity:.7; }
+.sbtn.mine { background:#fef3c7; border-color:var(--amber); color:#92400e; }
+.sbtn.sel { transform:scale(1.12); box-shadow:0 0 0 3px var(--g); }
+.sico { font-size:15px; line-height:1; }
+.sid { font-size:8px; margin-top:1px; }
+.sdetail { background:rgba(255,255,255,.95); border-radius:var(--radius); padding:18px;
+  box-shadow:0 2px 8px rgba(0,0,0,.06); }
+.sdetail h3 { font-size:15px; font-weight:700; color:var(--text); margin-bottom:3px; }
+.sdetail .fsub { font-size:12px; color:var(--muted); margin-bottom:12px; }
+.dgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+.di { background:#f9fafb; border-radius:8px; padding:9px; }
+.di .dl { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:2px; }
+.di .dv { font-size:13px; font-weight:600; color:var(--text); }
+.abtns { display:flex; gap:7px; flex-wrap:wrap; }
+.pholder { text-align:center; padding:28px; color:#aaa; font-size:13px; }
 
-  /* ── RESERVATIONS ── */
-  .res-list { display: flex; flex-direction: column; gap: 12px; }
-  .res-card { background: #fff; border-radius: 12px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
-  .res-card .rh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 6px; }
-  .res-card .rid { font-size: 15px; font-weight: 700; color: #333; }
-  .res-card .rfloor { font-size: 12px; color: #888; }
-  .res-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-  .empty-res { text-align: center; padding: 40px; color: #aaa; font-size: 14px; background: #fff; border-radius: 12px; }
+/* timer */
+.twrap { margin-bottom:10px; }
+.tlbls { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-bottom:3px; }
+.tbar { height:7px; background:#e5e7eb; border-radius:4px; overflow:hidden; }
+.tfill { height:100%; border-radius:4px; transition:width .5s,background .5s; }
 
-  /* ── QR MODAL ── */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
-  .modal-box { background: #fff; border-radius: 20px; padding: 28px; max-width: 320px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
-  .modal-box h3 { font-size: 18px; font-weight: 700; color: #333; margin-bottom: 6px; }
-  .modal-box p { font-size: 13px; color: #666; margin-bottom: 20px; }
-  .qr-svg { margin: 0 auto 16px; display: block; border-radius: 8px; border: 4px solid #006747; }
-  .qr-code-text { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #aaa; margin-bottom: 20px; word-break: break-all; }
-  .scan-btn { width: 100%; padding: 12px; background: #006747; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 8px; font-family: 'Space Grotesk', sans-serif; }
-  .scan-btn:hover { background: #005538; }
-  .close-btn { width: 100%; padding: 10px; background: #f3f4f6; color: #666; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; }
+/* buttons */
+.btn { padding:10px 18px; background:var(--g); color:#fff; border:none; border-radius:8px;
+  font-size:13px; font-weight:600; cursor:pointer; font-family:'Space Grotesk',sans-serif; transition:all .2s; }
+.btn:hover { background:#005538; }
+.btn.sm { padding:6px 13px; font-size:11px; }
+.btn.red{background:var(--red)}.btn.red:hover{background:#b91c1c}
+.btn.amber{background:var(--amber)}.btn.amber:hover{background:#b45309}
+.btn.blue{background:var(--blue)}.btn.blue:hover{background:#1e40af}
 
-  /* ── WARNING POPUP ── */
-  .warn-popup { position: fixed; bottom: 24px; right: 24px; background: #dc2626; color: #fff; border-radius: 14px; padding: 16px 20px; max-width: 300px; box-shadow: 0 8px 24px rgba(220,38,38,.4); z-index: 999; display: none; animation: slideIn .3s ease; }
-  @keyframes slideIn { from{transform:translateX(120%);opacity:0} to{transform:translateX(0);opacity:1} }
-  .warn-popup .wp-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
-  .warn-popup .wp-msg { font-size: 12px; opacity: .9; margin-bottom: 12px; }
-  .warn-popup .wp-btns { display: flex; gap: 8px; }
-  .warn-popup button { flex: 1; padding: 7px; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Space Grotesk', sans-serif; }
-  .warn-popup .wp-ext { background: #fff; color: #dc2626; }
-  .warn-popup .wp-co { background: rgba(255,255,255,.2); color: #fff; }
+/* reservations */
+.rcard { background:rgba(255,255,255,.95); border-radius:var(--radius); padding:16px;
+  box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:12px; }
+.rcard .rh { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:6px; }
+.rcard .rid { font-size:14px; font-weight:700; color:var(--text); }
+.rcard .rfl { font-size:11px; color:var(--muted); }
+.ract { display:flex; gap:7px; flex-wrap:wrap; margin-top:9px; }
+.empty { text-align:center; padding:36px; color:#aaa; font-size:13px;
+  background:rgba(255,255,255,.9); border-radius:var(--radius); }
 
-  /* ── CHAT ── */
-  .chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 220px); min-height: 300px; }
-  .suggestions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-  .sug { padding: 6px 14px; background: #d1fae5; border: 1.5px solid #006747; border-radius: 20px; font-size: 12px; color: #006747; cursor: pointer; font-weight: 600; transition: all .2s; }
-  .sug:hover { background: #006747; color: #fff; }
-  .chat-area { flex: 1; overflow-y: auto; background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06); display: flex; flex-direction: column; gap: 12px; }
-  .msg { max-width: 78%; padding: 11px 15px; border-radius: 16px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
-  .msg.user { background: #006747; color: #fff; border-radius: 16px 16px 4px 16px; align-self: flex-end; }
-  .msg.bot { background: #f3f4f6; color: #222; border-radius: 16px 16px 16px 4px; align-self: flex-start; }
-  .msg.typing { color: #999; font-style: italic; }
-  .input-row { display: flex; gap: 8px; }
-  .input-row input { flex: 1; padding: 11px 16px; border: 1.5px solid #ddd; border-radius: 24px; font-size: 13px; outline: none; font-family: 'Space Grotesk', sans-serif; }
-  .input-row input:focus { border-color: #006747; }
-  .send-btn { padding: 11px 22px; background: #006747; color: #fff; border: none; border-radius: 24px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Space Grotesk', sans-serif; }
-  .send-btn:hover { background: #005538; }
-  .send-btn:disabled { opacity: .5; cursor: not-allowed; }
+/* pill */
+.pill { font-size:11px; padding:3px 9px; border-radius:10px; font-weight:600; }
+.pill.av{background:#d1fae5;color:#065f46}
+.pill.oc{background:#fee2e2;color:#991b1b}
+.pill.mine{background:#fef3c7;color:#92400e}
+.pill.active{background:#dbeafe;color:#1e40af}
 
-  .pill { font-size: 11px; padding: 3px 9px; border-radius: 10px; font-weight: 600; }
-  .pill.av{background:#d1fae5;color:#065f46}
-  .pill.oc{background:#fee2e2;color:#991b1b}
-  .pill.mine{background:#fef3c7;color:#92400e}
+/* history */
+.hrow { display:flex; align-items:center; gap:10px; padding:10px 0;
+  border-bottom:1px solid #e5e7eb; font-size:13px; }
+.hrow:last-child { border-bottom:none; }
+.hrow .hico { font-size:18px; flex-shrink:0; }
+.hrow .hinfo { flex:1; }
+.hrow .hid { font-weight:700; color:var(--text); }
+.hrow .hmeta { font-size:11px; color:var(--muted); margin-top:2px; }
+.hrow .hdur { font-size:12px; font-weight:600; color:var(--g); white-space:nowrap; }
 
-  @media(max-width:600px){
-    .stats-grid{grid-template-columns:1fr 1fr}
-    .detail-grid{grid-template-columns:1fr}
-    .bellini-banner{flex-direction:column;text-align:center}
-  }
+/* tutoring */
+.ta-filter { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.ta-filter select { padding:6px 12px; border:2px solid #ddd; border-radius:20px;
+  font-size:12px; background:rgba(255,255,255,.9); outline:none; cursor:pointer; }
+.ta-filter select:focus { border-color:var(--g); }
+.tarow { display:flex; align-items:flex-start; gap:12px; padding:13px;
+  background:rgba(255,255,255,.95); border-radius:10px; margin-bottom:8px;
+  box-shadow:0 1px 4px rgba(0,0,0,.06); border:1px solid #e5e7eb; }
+.tarow .taico { width:40px; height:40px; border-radius:10px; background:var(--gl);
+  display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.tarow .tainf { flex:1; }
+.tarow .taname { font-size:14px; font-weight:700; color:var(--text); }
+.tarow .tasub { font-size:12px; color:var(--g); font-weight:600; margin-bottom:3px; }
+.tarow .tadays { font-size:11px; color:var(--muted); }
+.tarow .tastatus { font-size:11px; padding:3px 9px; border-radius:10px; font-weight:600; flex-shrink:0; }
+.tastatus.free { background:#d1fae5; color:#065f46; }
+.tastatus.busy { background:#fee2e2; color:#991b1b; }
+
+/* study groups */
+.sg-form { background:rgba(255,255,255,.95); border-radius:var(--radius); padding:16px;
+  box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:14px; border:1px solid rgba(0,103,71,.15); }
+.sg-form h3 { font-size:14px; font-weight:700; color:var(--text); margin-bottom:12px; }
+.sg-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+.sg-row input, .sg-row select, .sg-full input { width:100%; padding:9px 12px;
+  border:1.5px solid #ddd; border-radius:8px; font-size:13px; outline:none;
+  font-family:'Space Grotesk',sans-serif; background:#fff; }
+.sg-row input:focus,.sg-row select:focus,.sg-full input:focus { border-color:var(--g); }
+.sg-full { margin-bottom:10px; }
+.sgcard { background:rgba(255,255,255,.95); border-radius:10px; padding:14px;
+  box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:10px; border-left:4px solid var(--g); }
+.sgcard .sgtop { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.sgcard .sgsubj { font-size:14px; font-weight:700; color:var(--text); }
+.sgcard .sgmeta { font-size:12px; color:var(--muted); margin-top:3px; }
+.sgcard .sgdesc { font-size:13px; color:var(--text); margin-top:8px; line-height:1.5; }
+.sgcard .sgfoot { display:flex; align-items:center; justify-content:space-between;
+  margin-top:10px; flex-wrap:wrap; gap:8px; }
+.sgcard .sgtime { font-size:11px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+.join-btn { padding:5px 14px; background:var(--g); color:#fff; border:none;
+  border-radius:8px; font-size:12px; font-weight:600; cursor:pointer;
+  font-family:'Space Grotesk',sans-serif; transition:background .2s; }
+.join-btn:hover { background:#005538; }
+.join-btn.joined { background:#6b7280; cursor:default; }
+.spots-badge { font-size:11px; padding:3px 8px; border-radius:10px;
+  background:#fef3c7; color:#92400e; font-weight:600; }
+
+/* bellini */
+.bellini-banner { background:linear-gradient(135deg,#001a0f,#003320,#001a0f);
+  border:1px solid rgba(0,255,140,.2); border-radius:14px; padding:20px 22px;
+  margin-bottom:16px; display:flex; align-items:center; gap:18px; position:relative; overflow:hidden; }
+.bellini-banner::before { content:''; position:absolute; inset:0;
+  background-image:linear-gradient(rgba(0,103,71,.15) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,103,71,.15) 1px,transparent 1px); background-size:20px 20px; }
+.blogo { position:relative; z-index:1; width:60px; height:60px; background:var(--g);
+  border-radius:14px; display:flex; align-items:center; justify-content:center;
+  font-size:28px; flex-shrink:0; box-shadow:0 0 20px rgba(0,103,71,.4); }
+.binf { position:relative; z-index:1; flex:1; }
+.binf h3 { color:#fff; font-size:17px; font-weight:700; margin-bottom:4px; }
+.binf p { color:rgba(255,255,255,.6); font-size:12px; line-height:1.5; }
+.btag { position:relative; z-index:1; background:rgba(0,255,140,.1);
+  border:1px solid rgba(0,255,140,.3); color:#4ade80; font-size:11px; font-weight:700;
+  padding:4px 11px; border-radius:20px; font-family:'JetBrains Mono',monospace; white-space:nowrap; }
+
+/* chat */
+.chat-wrap { display:flex; flex-direction:column; height:calc(100vh - 230px); min-height:280px; }
+.suggs { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:10px; }
+.sug { padding:5px 12px; background:#d1fae5; border:1.5px solid var(--g); border-radius:20px;
+  font-size:12px; color:var(--g); cursor:pointer; font-weight:600; transition:all .2s; }
+.sug:hover { background:var(--g); color:#fff; }
+.chat-area { flex:1; overflow-y:auto; background:rgba(255,255,255,.95); border-radius:var(--radius);
+  padding:14px; margin-bottom:10px; box-shadow:0 2px 8px rgba(0,0,0,.06);
+  display:flex; flex-direction:column; gap:10px; }
+.msg { max-width:78%; padding:10px 14px; border-radius:16px; font-size:13px; line-height:1.6; white-space:pre-wrap; }
+.msg.user { background:var(--g); color:#fff; border-radius:16px 16px 4px 16px; align-self:flex-end; }
+.msg.bot  { background:#f3f4f6; color:#222; border-radius:16px 16px 16px 4px; align-self:flex-start; }
+.msg.typing { color:#999; font-style:italic; }
+.irow { display:flex; gap:8px; }
+.irow input { flex:1; padding:10px 15px; border:1.5px solid #ddd; border-radius:24px;
+  font-size:13px; outline:none; font-family:'Space Grotesk',sans-serif; background:rgba(255,255,255,.95); }
+.irow input:focus { border-color:var(--g); }
+.sbtn2 { padding:10px 20px; background:var(--g); color:#fff; border:none; border-radius:24px;
+  font-size:13px; font-weight:600; cursor:pointer; font-family:'Space Grotesk',sans-serif; }
+.sbtn2:hover { background:#005538; }
+.sbtn2:disabled { opacity:.5; cursor:not-allowed; }
+
+/* modals */
+.modal-ov { position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex;
+  align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(4px); }
+.modal-box { background:#fff; border-radius:20px; padding:26px; max-width:320px;
+  width:90%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+.modal-box h3 { font-size:17px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.modal-box p { font-size:13px; color:var(--muted); margin-bottom:18px; }
+.qr-canvas { margin:0 auto 14px; display:block; border-radius:8px; border:4px solid var(--g); }
+.qr-txt { font-family:'JetBrains Mono',monospace; font-size:9px; color:#aaa; margin-bottom:18px; word-break:break-all; }
+.scan-btn { width:100%; padding:11px; background:var(--g); color:#fff; border:none;
+  border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; margin-bottom:7px;
+  font-family:'Space Grotesk',sans-serif; }
+.scan-btn:hover { background:#005538; }
+.close-btn { width:100%; padding:9px; background:#f3f4f6; color:#666; border:none;
+  border-radius:8px; font-size:13px; cursor:pointer; font-family:'Space Grotesk',sans-serif; }
+
+/* warn popup */
+.warn-pop { position:fixed; bottom:22px; right:22px; background:var(--red); color:#fff;
+  border-radius:14px; padding:15px 18px; max-width:290px; z-index:999;
+  box-shadow:0 8px 24px rgba(220,38,38,.4); display:none; animation:sli .3s ease; }
+@keyframes sli { from{transform:translateX(120%);opacity:0} to{transform:translateX(0);opacity:1} }
+.warn-pop .wt { font-size:13px; font-weight:700; margin-bottom:4px; }
+.warn-pop .wm { font-size:12px; opacity:.9; margin-bottom:10px; }
+.warn-pop .wb { display:flex; gap:7px; }
+.warn-pop button { flex:1; padding:6px; border:none; border-radius:6px;
+  font-size:12px; font-weight:600; cursor:pointer; font-family:'Space Grotesk',sans-serif; }
+.warn-pop .we { background:#fff; color:var(--red); }
+.warn-pop .wco { background:rgba(255,255,255,.2); color:#fff; }
+
+@media(max-width:600px){
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .dgrid{grid-template-columns:1fr}
+  .sg-row{grid-template-columns:1fr}
+  .bellini-banner{flex-direction:column;text-align:center}
+}
 </style>
 </head>
 <body>
 
-<!-- ANIMATED GRID (login + header only) -->
+<!-- animated dots container for login -->
 <div class="grid-bg" id="gridBg">
-  <div class="grid-dots" id="gridDots"></div>
+  <div id="gdots"></div>
   <div class="scan-line"></div>
 </div>
 
+<!-- subtle app grid -->
+<div class="app-grid" id="appGrid" style="display:none"></div>
+
 <!-- HEADER -->
-<div class="header" id="mainHeader">
-  <div class="header-grid"></div>
-  <div class="header-glow"></div>
+<div class="header">
+  <div class="hgrid"></div><div class="hglow"></div>
   <div class="bull">🐂</div>
   <div>
     <div class="brand">BullSpace AI</div>
-    <div class="sub">USF_TAMPA_LIBRARY // v2.0</div>
+    <div class="sub">USF_TAMPA_LIBRARY // v3.0</div>
   </div>
-  <div class="status-dot"></div>
+  <div class="hright">
+    <button class="a11y-btn" onclick="toggleA11y()" id="a11yBtn">♿ Accessibility</button>
+    <div class="status-dot"></div>
+  </div>
 </div>
 
-<!-- WARNING POPUP -->
-<div class="warn-popup" id="warnPopup">
-  <div class="wp-title">⚠️ Session expiring soon!</div>
-  <div class="wp-msg" id="warnMsg">Your seat reservation expires in 15 minutes.</div>
-  <div class="wp-btns">
-    <button class="wp-ext" id="warnExtBtn" onclick="extendFromWarn()">+30 min</button>
-    <button class="wp-co" onclick="checkoutFromWarn()">Check out</button>
+<!-- WARN POPUP -->
+<div class="warn-pop" id="warnPop">
+  <div class="wt">⚠️ Session expiring!</div>
+  <div class="wm" id="warnMsg">Your seat expires in 15 minutes.</div>
+  <div class="wb">
+    <button class="we" id="warnExt" onclick="extendFromWarn()">+30 min</button>
+    <button class="wco" onclick="checkoutFromWarn()">Check out</button>
   </div>
 </div>
 
 <!-- QR MODAL -->
-<div class="modal-overlay" id="qrModal" style="display:none" onclick="closeQR(event)">
+<div class="modal-ov" id="qrModal" style="display:none" onclick="closeQR(event)">
   <div class="modal-box">
     <h3>📱 QR Checkout</h3>
-    <p>Show this code at any library kiosk or scan to check out instantly.</p>
-    <canvas id="qrCanvas" class="qr-svg" width="180" height="180"></canvas>
-    <div class="qr-code-text" id="qrText"></div>
+    <p>Show at any library kiosk to check out instantly.</p>
+    <canvas id="qrCanvas" class="qr-canvas" width="180" height="180"></canvas>
+    <div class="qr-txt" id="qrTxt"></div>
     <button class="scan-btn" onclick="simScan()">📷 Simulate kiosk scan</button>
     <button class="close-btn" onclick="document.getElementById('qrModal').style.display='none'">Close</button>
   </div>
@@ -369,8 +390,8 @@
     <div class="login-badge">SYSTEM ONLINE</div>
     <h2>Welcome to BullSpace AI</h2>
     <p>Sign in with your USF Student ID to find your perfect study spot across all 6 floors.</p>
-    <div class="field"><label>Student ID</label><input type="text" id="sidInput" placeholder="U12345678" maxlength="10"></div>
-    <div class="field"><label>Full Name</label><input type="text" id="nameInput" placeholder="Your name" maxlength="40"></div>
+    <div class="field"><label>Student ID</label><input type="text" id="sidIn" placeholder="U12345678" maxlength="10"></div>
+    <div class="field"><label>Full Name</label><input type="text" id="nmIn" placeholder="Your name" maxlength="40"></div>
     <div class="err" id="loginErr">Please enter a valid Student ID (U + 8 digits) and your name.</div>
     <button class="login-btn" onclick="login()">Find My Study Space →</button>
   </div>
@@ -380,273 +401,402 @@
 <div class="app" id="appScreen">
   <div class="user-bar">
     <span style="opacity:.6">SIGNED IN AS</span>
-    <strong id="userLabel"></strong>
-    <button onclick="logout()">Sign out</button>
+    <strong id="userLbl"></strong>
+    <button onclick="logout()" style="margin-left:auto">Sign out</button>
   </div>
-  <div class="nav-tabs">
-    <div class="tab on" onclick="showPanel('dashboard',this)">📊 Dashboard</div>
-    <div class="tab" onclick="showPanel('seatmap',this)">🗺 Seat Map</div>
-    <div class="tab" onclick="showPanel('reservations',this)">🎫 My Reservations</div>
-    <div class="tab" onclick="showPanel('chat',this)">💬 AI Chat</div>
+  <div class="nav-tabs" id="navTabs">
+    <div class="tab on"  onclick="sp('dashboard',this)">📊 Dashboard</div>
+    <div class="tab"     onclick="sp('seatmap',this)">🗺 Seat Map</div>
+    <div class="tab"     onclick="sp('reservations',this)">🎫 Reservations</div>
+    <div class="tab"     onclick="sp('studygroups',this)">👥 Study Groups</div>
+    <div class="tab"     onclick="sp('tutoring',this)">📚 Tutoring</div>
+    <div class="tab"     onclick="sp('history',this)">🕐 History</div>
+    <div class="tab"     onclick="sp('chat',this)">💬 AI Chat</div>
   </div>
 
   <!-- DASHBOARD -->
   <div class="panel on" id="dashboard">
     <div class="stats-grid" id="statsGrid"></div>
-    <div class="floor-bars"><h3>Floor occupancy</h3><div id="floorBars"></div></div>
+    <div class="card"><h3>Floor occupancy</h3><div id="floorBars"></div></div>
   </div>
 
   <!-- SEAT MAP -->
   <div class="panel" id="seatmap">
     <div class="map-controls">
-      <div class="floor-tabs" id="floorTabs"></div>
-      <select class="noise-filter" id="noiseFilter" onchange="renderMap(curFloor)">
+      <div class="ftabs" id="ftabs"></div>
+      <select class="nfilter" id="nfilter" onchange="renderMap(curFloor)">
         <option value="all">All noise levels</option>
-        <option value="quiet">🤫 Quiet only</option>
+        <option value="quiet">🤫 Quiet</option>
         <option value="low-moderate">📖 Low-moderate</option>
         <option value="moderate">💬 Moderate</option>
         <option value="casual">🗣 Casual</option>
       </select>
     </div>
     <div class="legend">
-      <div class="leg"><div class="leg-dot av"></div>Available</div>
-      <div class="leg"><div class="leg-dot oc"></div>Occupied</div>
-      <div class="leg"><div class="leg-dot mine"></div>Your seat</div>
+      <div class="leg"><div class="ldot av"></div>Available</div>
+      <div class="leg"><div class="ldot oc"></div>Occupied</div>
+      <div class="leg"><div class="ldot mine"></div>Your seat</div>
     </div>
-    <div class="map-container" id="mapContainer"></div>
-    <div class="seat-detail" id="seatDetail"><div class="placeholder-detail">Click a green seat to see details and reserve it.</div></div>
+    <div class="map-container" id="mapCont"></div>
+    <div class="sdetail" id="sdetail"><div class="pholder">Click a green seat to view details and reserve it.</div></div>
   </div>
 
   <!-- RESERVATIONS -->
-  <div class="panel" id="reservations">
-    <div class="res-list" id="resList"></div>
+  <div class="panel" id="reservations"><div id="resList"></div></div>
+
+  <!-- STUDY GROUPS -->
+  <div class="panel" id="studygroups">
+    <div class="sg-form">
+      <h3>➕ Post a Study Group</h3>
+      <div class="sg-row">
+        <input type="text" id="sgSubj" placeholder="Subject (e.g. Calc 2, Chemistry)">
+        <select id="sgFloor">
+          <option value="">Select floor...</option>
+          <option>1st Floor</option><option>2nd Floor</option>
+          <option>3rd Floor</option><option>4th Floor</option><option>5th Floor</option>
+        </select>
+      </div>
+      <div class="sg-row">
+        <input type="text" id="sgTime" placeholder="Time (e.g. 7:00 PM tonight)">
+        <input type="number" id="sgSpots" placeholder="Spots needed" min="1" max="10">
+      </div>
+      <div class="sg-full">
+        <input type="text" id="sgDesc" placeholder="Description (e.g. Studying for midterm, bring textbook)">
+      </div>
+      <button class="btn" onclick="postGroup()">Post Study Group</button>
+    </div>
+    <div id="sgList"></div>
+  </div>
+
+  <!-- TUTORING -->
+  <div class="panel" id="tutoring">
+    <div class="ta-filter">
+      <select id="taSubjFilter" onchange="renderTutoring()">
+        <option value="all">All subjects</option>
+        <option>Mathematics</option><option>Chemistry</option><option>Physics</option>
+        <option>Biology</option><option>Writing</option><option>Computer Science</option>
+        <option>Economics</option><option>Statistics</option>
+      </select>
+      <select id="taDayFilter" onchange="renderTutoring()">
+        <option value="all">All days</option>
+        <option>Mon</option><option>Tue</option><option>Wed</option>
+        <option>Thu</option><option>Fri</option>
+      </select>
+    </div>
+    <div id="taList"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="panel" id="history">
+    <div class="card" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+      <h3 style="margin:0">Your session history</h3>
+      <button class="btn sm red" onclick="clearHistory()">Clear</button>
+    </div>
+    <div class="card" id="histList"></div>
   </div>
 
   <!-- CHAT -->
   <div class="panel" id="chat">
     <div class="chat-wrap">
-      <div class="suggestions">
-        <div class="sug" onclick="sendSug('Find me a quiet seat with a charger')">🤫 Quiet + charger</div>
-        <div class="sug" onclick="sendSug('I need a group table for 4 people')">👥 Group table</div>
-        <div class="sug" onclick="sendSug('Find me a computer station')">💻 Computer</div>
-        <div class="sug" onclick="sendSug('Where can I get coffee?')">☕ Coffee</div>
-        <div class="sug" onclick="sendSug('What are the library hours today?')">🕐 Hours</div>
-        <div class="sug" onclick="sendSug('Tell me about the Bellini AI College')">🏛 Bellini College</div>
+      <div class="suggs">
+        <div class="sug" onclick="ss('Find me a quiet seat with a charger')">🤫 Quiet + charger</div>
+        <div class="sug" onclick="ss('I need a group table for 4 people')">👥 Group table</div>
+        <div class="sug" onclick="ss('Find me a computer station')">💻 Computer</div>
+        <div class="sug" onclick="ss(\'Where can I get coffee?\')">☕ Coffee</div>
+        <div class="sug" onclick="ss('Library hours today')">🕐 Hours</div>
+        <div class="sug" onclick="ss('Tell me about the Bellini AI College on the 6th floor')">🏛 Bellini</div>
       </div>
       <div class="chat-area" id="chatArea">
-        <div class="msg bot">👋 Hey! I'm BullSpace AI. Tell me what kind of study space you need across USF Tampa Library's 6 floors!</div>
+        <div class="msg bot">👋 Hey! I'm BullSpace AI. Tell me what kind of study space you need!</div>
       </div>
-      <div class="input-row">
-        <input type="text" id="msgInput" placeholder="Ask me anything about the library..." onkeydown="if(event.key==='Enter')sendMsg()">
-        <button class="send-btn" id="sendBtn" onclick="sendMsg()">Send</button>
+      <div class="irow">
+        <input type="text" id="msgIn" placeholder="Ask me anything about the library..." onkeydown="if(event.key==='Enter')sendMsg()">
+        <button class="sbtn2" id="sendBtn" onclick="sendMsg()">Send</button>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-// ── ANIMATED DOTS ──
-(function(){
-  const container = document.getElementById('gridDots');
+// ── DOTS ──
+(()=>{
+  const c=document.getElementById('gdots');
   for(let i=0;i<30;i++){
-    const dot = document.createElement('div');
-    dot.className = 'grid-dot';
-    dot.style.left = (Math.random()*100)+'%';
-    dot.style.top  = (Math.random()*100)+'%';
-    dot.style.setProperty('--dur',  (2+Math.random()*4)+'s');
-    dot.style.setProperty('--delay',(Math.random()*4)+'s');
-    container.appendChild(dot);
+    const d=document.createElement('div');
+    d.className='grid-dot';
+    d.style.left=(Math.random()*100)+'%';
+    d.style.top=(Math.random()*100)+'%';
+    d.style.setProperty('--dur',(2+Math.random()*4)+'s');
+    d.style.setProperty('--delay',(Math.random()*4)+'s');
+    c.appendChild(d);
   }
 })();
 
-// ── DATA ──
-const FLOORS = {
-  "1st Floor": { noise:"casual", nc:"noise-cas", advising:false, seats:[
+// ── FLOORS DATA ──
+const FLOORS={
+  "1st Floor":{noise:"casual",nc:"nc",adv:false,seats:[
     {id:"1-LC01",type:"table",zone:"Learning Commons",cap:4,charger:true},
     {id:"1-LC02",type:"table",zone:"Learning Commons",cap:4,charger:true},
     {id:"1-LC03",type:"table",zone:"Learning Commons",cap:4,charger:false},
+    {id:"1-LC04",type:"table",zone:"Learning Commons",cap:4,charger:true},
+    {id:"1-LC05",type:"table",zone:"Learning Commons",cap:2,charger:false},
     {id:"1-CL01",type:"computer",zone:"Computer Lab",cap:1,charger:true},
     {id:"1-CL02",type:"computer",zone:"Computer Lab",cap:1,charger:true},
     {id:"1-CL03",type:"computer",zone:"Computer Lab",cap:1,charger:true},
+    {id:"1-CL04",type:"computer",zone:"Computer Lab",cap:1,charger:true},
+    {id:"1-CL05",type:"computer",zone:"Computer Lab",cap:1,charger:true},
     {id:"1-VL01",type:"station",zone:"VizLab",cap:1,charger:true},
     {id:"1-VL02",type:"station",zone:"VizLab",cap:1,charger:true},
+    {id:"1-VL03",type:"station",zone:"VizLab",cap:1,charger:true},
+    {id:"1-YE01",type:"table",zone:"Youth Experiences",cap:6,charger:false},
+    {id:"1-YE02",type:"table",zone:"Youth Experiences",cap:6,charger:false},
   ]},
-  "2nd Floor": { noise:"moderate", nc:"noise-mod", advising:false, seats:[
+  "2nd Floor":{noise:"moderate",nc:"nm",adv:false,seats:[
     {id:"2-LC01",type:"carrel",zone:"Learning Commons",cap:1,charger:true},
     {id:"2-LC02",type:"carrel",zone:"Learning Commons",cap:1,charger:false},
     {id:"2-LC03",type:"carrel",zone:"Learning Commons",cap:1,charger:true},
+    {id:"2-LC04",type:"carrel",zone:"Learning Commons",cap:1,charger:false},
+    {id:"2-LC05",type:"carrel",zone:"Learning Commons",cap:1,charger:true},
     {id:"2-SL01",type:"computer",zone:"Smart Lab",cap:1,charger:true},
     {id:"2-SL02",type:"computer",zone:"Smart Lab",cap:1,charger:true},
+    {id:"2-SL03",type:"computer",zone:"Smart Lab",cap:1,charger:true},
     {id:"2-TH01",type:"table",zone:"Tutoring Hub",cap:6,charger:true},
     {id:"2-TH02",type:"table",zone:"Tutoring Hub",cap:6,charger:false},
+    {id:"2-TH03",type:"table",zone:"Tutoring Hub",cap:4,charger:true},
     {id:"2-WC01",type:"table",zone:"Writing Center",cap:4,charger:false},
+    {id:"2-WC02",type:"table",zone:"Writing Center",cap:4,charger:false},
+    {id:"2-CC01",type:"carrel",zone:"Career Cube",cap:1,charger:true},
+    {id:"2-CC02",type:"carrel",zone:"Career Cube",cap:1,charger:true},
   ]},
-  "3rd Floor": { noise:"low-moderate", nc:"noise-low", advising:false, seats:[
+  "3rd Floor":{noise:"low-moderate",nc:"nl",adv:false,seats:[
     {id:"3-W305",type:"carrel",zone:"West Carrels",cap:1,charger:false},
     {id:"3-W306",type:"carrel",zone:"West Carrels",cap:1,charger:true},
-    {id:"3-W318",type:"carrel",zone:"West Carrels",cap:1,charger:false},
+    {id:"3-W307",type:"carrel",zone:"West Carrels",cap:1,charger:false},
+    {id:"3-W312",type:"carrel",zone:"West Carrels",cap:1,charger:false},
+    {id:"3-W318",type:"carrel",zone:"West Carrels",cap:1,charger:true},
+    {id:"3-W324",type:"carrel",zone:"West Carrels",cap:1,charger:false},
+    {id:"3-W331",type:"carrel",zone:"West Carrels",cap:1,charger:true},
     {id:"3-E335",type:"carrel",zone:"East Carrels",cap:1,charger:false},
+    {id:"3-E341",type:"carrel",zone:"East Carrels",cap:1,charger:false},
+    {id:"3-E347",type:"carrel",zone:"East Carrels",cap:1,charger:true},
+    {id:"3-E354",type:"carrel",zone:"East Carrels",cap:1,charger:false},
     {id:"3-E357",type:"carrel",zone:"East Carrels",cap:1,charger:true},
     {id:"3-OT01",type:"table",zone:"Open Reading Tables",cap:4,charger:true},
     {id:"3-OT02",type:"table",zone:"Open Reading Tables",cap:4,charger:false},
+    {id:"3-OT03",type:"table",zone:"Open Reading Tables",cap:4,charger:true},
   ]},
-  "4th Floor": { noise:"low-moderate", nc:"noise-low", advising:false, seats:[
+  "4th Floor":{noise:"low-moderate",nc:"nl",adv:false,seats:[
     {id:"4-W440",type:"carrel",zone:"West Carrels",cap:1,charger:false},
     {id:"4-W441",type:"carrel",zone:"West Carrels",cap:1,charger:true},
+    {id:"4-W445",type:"carrel",zone:"West Carrels",cap:1,charger:false},
+    {id:"4-W450",type:"carrel",zone:"West Carrels",cap:1,charger:false},
+    {id:"4-W455",type:"carrel",zone:"West Carrels",cap:1,charger:true},
     {id:"4-E426",type:"carrel",zone:"East Carrels",cap:1,charger:false},
+    {id:"4-E430",type:"carrel",zone:"East Carrels",cap:1,charger:true},
+    {id:"4-E433",type:"carrel",zone:"East Carrels",cap:1,charger:false},
     {id:"4-E437",type:"carrel",zone:"East Carrels",cap:1,charger:true},
     {id:"4-SC01",type:"table",zone:"Special Collections",cap:6,charger:false},
     {id:"4-SC02",type:"table",zone:"Special Collections",cap:6,charger:false},
+    {id:"4-SC03",type:"table",zone:"Special Collections",cap:4,charger:false},
   ]},
-  "5th Floor": { noise:"quiet", nc:"noise-quiet", advising:false, seats:[
+  "5th Floor":{noise:"quiet",nc:"nq",adv:false,seats:[
     {id:"5-520A",type:"room",zone:"Reading Room West",cap:6,charger:true},
     {id:"5-520B",type:"room",zone:"Reading Room West",cap:6,charger:true},
     {id:"5-520C",type:"room",zone:"Reading Room West",cap:6,charger:true},
+    {id:"5-520D",type:"room",zone:"Reading Room West",cap:6,charger:true},
     {id:"5-514A",type:"room",zone:"Reading Room East",cap:6,charger:true},
     {id:"5-514B",type:"room",zone:"Reading Room East",cap:6,charger:true},
+    {id:"5-514C",type:"room",zone:"Reading Room East",cap:6,charger:true},
     {id:"5-GR01",type:"table",zone:"Graduate Reading Room",cap:1,charger:true},
     {id:"5-GR02",type:"table",zone:"Graduate Reading Room",cap:1,charger:true},
     {id:"5-OC01",type:"carrel",zone:"Open Stacks",cap:1,charger:false},
     {id:"5-OC02",type:"carrel",zone:"Open Stacks",cap:1,charger:false},
+    {id:"5-OC03",type:"carrel",zone:"Open Stacks",cap:1,charger:false},
   ]},
-  "6th Floor": { noise:"moderate", nc:"noise-mod", advising:true, seats:[] },
+  "6th Floor":{noise:"moderate",nc:"nm",adv:true,seats:[]},
 };
 
-const ICONS={carrel:"📖",table:"📋",computer:"💻",station:"🖥️",room:"🚪"};
-const SESSION_MS=2*60*60*1000, EXTEND_MS=30*60*1000, WARN_MS=15*60*1000;
-let user=null,occupancy={},reservations={},selSeat=null,curFloor="1st Floor";
-let warnSeatId=null,warnShown={};
+const TA_DATA=[
+  {id:1,name:"Maria Santos",subject:"Mathematics",days:["Mon","Wed","Fri"],start:"10:00 AM",end:"12:00 PM",location:"Tutoring Hub 2nd Floor",status:"free"},
+  {id:2,name:"James Okafor",subject:"Mathematics",days:["Tue","Thu"],start:"2:00 PM",end:"5:00 PM",location:"Tutoring Hub 2nd Floor",status:"free"},
+  {id:3,name:"Priya Nair",subject:"Chemistry",days:["Mon","Tue","Thu"],start:"9:00 AM",end:"11:00 AM",location:"Tutoring Hub 2nd Floor",status:"free"},
+  {id:4,name:"Carlos Rivera",subject:"Physics",days:["Wed","Fri"],start:"1:00 PM",end:"4:00 PM",location:"Tutoring Hub 2nd Floor",status:"free"},
+  {id:5,name:"Ashley Kim",subject:"Writing",days:["Mon","Tue","Wed","Thu","Fri"],start:"10:00 AM",end:"3:00 PM",location:"Writing Center 2nd Floor",status:"free"},
+  {id:6,name:"David Chen",subject:"Computer Science",days:["Mon","Wed"],start:"3:00 PM",end:"6:00 PM",location:"Smart Lab 2nd Floor",status:"free"},
+  {id:7,name:"Sarah Johnson",subject:"Biology",days:["Tue","Thu"],start:"11:00 AM",end:"2:00 PM",location:"Tutoring Hub 2nd Floor",status:"free"},
+  {id:8,name:"Michael Torres",subject:"Economics",days:["Mon","Thu","Fri"],start:"1:00 PM",end:"3:00 PM",location:"Tutoring Hub 2nd Floor",status:"free"},
+  {id:9,name:"Emily Zhang",subject:"Statistics",days:["Tue","Wed","Fri"],start:"9:00 AM",end:"12:00 PM",location:"Tutoring Hub 2nd Floor",status:"free"},
+  {id:10,name:"Omar Hassan",subject:"Mathematics",days:["Mon","Tue","Wed","Thu"],start:"4:00 PM",end:"7:00 PM",location:"Tutoring Hub 2nd Floor",status:"free"},
+  {id:11,name:"Rachel Green",subject:"Chemistry",days:["Wed","Fri"],start:"2:00 PM",end:"5:00 PM",location:"Tutoring Hub 2nd Floor",status:"busy"},
+  {id:12,name:"Tyler Brooks",subject:"Physics",days:["Mon","Tue","Thu"],start:"11:00 AM",end:"1:00 PM",location:"Tutoring Hub 2nd Floor",status:"free"},
+  {id:13,name:"Jasmine Patel",subject:"Writing",days:["Mon","Wed","Fri"],start:"1:00 PM",end:"4:00 PM",location:"Writing Center 2nd Floor",status:"free"},
+  {id:14,name:"Kevin Wu",subject:"Computer Science",days:["Tue","Thu","Fri"],start:"2:00 PM",end:"5:00 PM",location:"Smart Lab 2nd Floor",status:"free"},
+];
 
-function randomOcc(){return Math.random()<0.35;}
-function initOcc(){Object.entries(FLOORS).forEach(([,f])=>{if(!f.advising)f.seats.forEach(s=>{if(!occupancy[s.id])occupancy[s.id]=randomOcc();});});}
-function getSeatState(id){
-  if(reservations[id]){
-    if(Date.now()>reservations[id].exp){delete reservations[id];return 'av';}
-    if(reservations[id].uid===user.id) return 'mine';
+const ICONS={carrel:"📖",table:"📋",computer:"💻",station:"🖥️",room:"🚪"};
+const S_MS=2*60*60*1000, E_MS=30*60*1000, W_MS=15*60*1000;
+
+let user=null, occ={}, res={}, selSeat=null, curFloor="1st Floor";
+let warnId=null, warnShown={}, a11yOn=false;
+let studyGroups=[];
+
+// ── LOCALSTORAGE HELPERS ──
+function lsGet(k){try{return JSON.parse(localStorage.getItem(k));}catch{return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+function getHistory(){return lsGet('bs_history_'+(user?.id||'')) || [];}
+function addHistory(entry){
+  const h=getHistory(); h.unshift(entry);
+  lsSet('bs_history_'+(user?.id||''), h.slice(0,50));
+}
+function clearHistory(){lsSet('bs_history_'+(user?.id||''),[]);renderHistory();}
+
+// ── OCC ──
+function rndOcc(){return Math.random()<0.35;}
+function initOcc(){Object.values(FLOORS).forEach(f=>{if(!f.adv)f.seats.forEach(s=>{if(!occ[s.id])occ[s.id]=rndOcc();});});}
+function getState(id){
+  if(res[id]){
+    if(Date.now()>res[id].exp){delete res[id];return 'av';}
+    if(res[id].uid===user.id) return 'mine';
     return 'oc';
   }
-  return occupancy[id]?'oc':'av';
+  return occ[id]?'oc':'av';
+}
+function floorAvail(name){
+  const f=FLOORS[name];
+  if(f.adv) return 0;
+  return f.seats.filter(s=>getState(s.id)==='av').length;
 }
 
+// ── A11Y ──
+function toggleA11y(){
+  a11yOn=!a11yOn;
+  document.body.classList.toggle('a11y',a11yOn);
+  document.getElementById('a11yBtn').textContent=a11yOn?'♿ Standard':'♿ Accessibility';
+}
+
+// ── LOGIN / LOGOUT ──
 function login(){
-  const sid=document.getElementById('sidInput').value.trim();
-  const nm=document.getElementById('nameInput').value.trim();
+  const sid=document.getElementById('sidIn').value.trim();
+  const nm=document.getElementById('nmIn').value.trim();
   if(!/^U\d{8}$/.test(sid)||!nm){document.getElementById('loginErr').style.display='block';return;}
   user={id:sid,name:nm};
   document.getElementById('loginErr').style.display='none';
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('appScreen').style.display='block';
   document.getElementById('gridBg').style.display='none';
-  document.getElementById('userLabel').textContent=nm+' ('+sid+')';
-  initOcc();renderDashboard();renderFloorTabs();renderMap(curFloor);renderReservations();
+  document.getElementById('appGrid').style.display='block';
+  document.getElementById('userLbl').textContent=nm+' ('+sid+')';
+  initOcc();renderDashboard();renderFloorTabs();renderMap(curFloor);
+  renderReservations();renderTutoring();renderGroups();renderHistory();
 }
-
 function logout(){
-  user=null;occupancy={};reservations={};selSeat=null;warnShown={};
+  user=null;occ={};res={};selSeat=null;warnShown={};studyGroups=[];
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('appScreen').style.display='none';
   document.getElementById('gridBg').style.display='block';
-  document.getElementById('warnPopup').style.display='none';
-  document.getElementById('sidInput').value='';
-  document.getElementById('nameInput').value='';
+  document.getElementById('appGrid').style.display='none';
+  document.getElementById('warnPop').style.display='none';
+  document.getElementById('sidIn').value='';
+  document.getElementById('nmIn').value='';
 }
 
-function showPanel(id,tab){
+// ── PANEL ──
+function sp(id,tab){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   document.getElementById(id).classList.add('on');
   tab.classList.add('on');
   if(id==='reservations') renderReservations();
   if(id==='dashboard') renderDashboard();
+  if(id==='tutoring') renderTutoring();
+  if(id==='studygroups') renderGroups();
+  if(id==='history') renderHistory();
 }
 
-// ── BELLINI BANNER ──
-function belliniHTML(){
-  return `<div class="bellini-banner">
-    <div class="bellini-logo">🏛️</div>
-    <div class="bellini-info">
-      <h3>Bellini AI College</h3>
-      <p>6th Floor is exclusively for <strong style="color:#4ade80">Bellini AI College</strong> advising, faculty offices, and college-specific rooms.<br>
-      <strong style="color:rgba(255,255,255,.7)">Not available for general student study.</strong> Please use Floors 1–5 for study spaces.</p>
-    </div>
-    <div class="bellini-tag">ADVISING ONLY</div>
-  </div>`;
-}
-
+// ── DASHBOARD ──
 function renderDashboard(){
   let av=0,oc=0,my=0;
-  Object.entries(FLOORS).forEach(([,f])=>{
-    if(f.advising) return;
+  Object.values(FLOORS).forEach(f=>{
+    if(f.adv)return;
     f.seats.forEach(s=>{
-      const st=getSeatState(s.id);
+      const st=getState(s.id);
       if(st==='av') av++; else oc++;
       if(st==='mine') my++;
     });
   });
-  const total=av+oc||1;
+  const tot=av+oc||1;
   document.getElementById('statsGrid').innerHTML=`
     <div class="stat-card"><div class="num green">${av}</div><div class="lbl">Available</div></div>
     <div class="stat-card"><div class="num red">${oc}</div><div class="lbl">Occupied</div></div>
-    <div class="stat-card"><div class="num">${Math.round(av/total*100)}%</div><div class="lbl">Open rate</div></div>
+    <div class="stat-card"><div class="num">${Math.round(av/tot*100)}%</div><div class="lbl">Open rate</div></div>
     <div class="stat-card"><div class="num amber">${my}</div><div class="lbl">My reservations</div></div>`;
   document.getElementById('floorBars').innerHTML=Object.entries(FLOORS).map(([name,f])=>{
-    if(f.advising) return `<div class="floor-row">
+    if(f.adv) return `<div class="floor-row">
       <div class="floor-name">${name}</div>
-      <div class="bar-wrap"><div class="bar-fill" style="width:100%;background:#6b7280"></div></div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:100%;background:#9ca3af"></div></div>
       <div class="bar-pct">—</div>
-      <div class="noise-badge" style="background:#f3f4f6;color:#6b7280">advising</div>
+      <div class="nbadge" style="background:#f3f4f6;color:#6b7280">advising</div>
     </div>`;
-    const occN=f.seats.filter(s=>getSeatState(s.id)==='oc').length;
+    const occN=f.seats.filter(s=>getState(s.id)==='oc').length;
     const pct=f.seats.length?Math.round(occN/f.seats.length*100):0;
-    const color=pct>75?'#dc2626':pct>50?'#d97706':'#006747';
+    const col=pct>75?'#dc2626':pct>50?'#d97706':'#006747';
     return `<div class="floor-row">
       <div class="floor-name">${name}</div>
-      <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${col}"></div></div>
       <div class="bar-pct">${pct}%</div>
-      <div class="noise-badge ${f.nc}">${f.noise}</div>
+      <div class="nbadge ${f.nc}">${f.noise}</div>
     </div>`;
   }).join('');
 }
 
+// ── FLOOR TABS ──
 function renderFloorTabs(){
-  document.getElementById('floorTabs').innerHTML=Object.keys(FLOORS).map(f=>
-    `<div class="ftab${f===curFloor?' on':''}" onclick="switchFloor('${f}')">${f}${FLOORS[f].advising?' 🏛':''}</div>`
-  ).join('');
+  document.getElementById('ftabs').innerHTML=Object.keys(FLOORS).map(f=>{
+    const av=floorAvail(f);
+    const badge=FLOORS[f].adv?'🏛':` (${av})`;
+    return `<div class="ftab${f===curFloor?' on':''}" onclick="switchFloor('${f}')">${f}${badge}</div>`;
+  }).join('');
 }
-
 function switchFloor(f){
   curFloor=f;selSeat=null;renderFloorTabs();renderMap(f);
-  if(!FLOORS[f].advising) document.getElementById('seatDetail').innerHTML='<div class="placeholder-detail">Click a green seat to see details and reserve it.</div>';
+  if(!FLOORS[f].adv) document.getElementById('sdetail').innerHTML='<div class="pholder">Click a green seat to view details and reserve it.</div>';
 }
 
-function renderMap(floorName){
-  const fl=FLOORS[floorName];
-  if(fl.advising){
-    document.getElementById('mapContainer').innerHTML=belliniHTML();
-    document.getElementById('seatDetail').innerHTML='<div class="placeholder-detail">This floor is reserved for Bellini AI College advising only.</div>';
+// ── SEAT MAP ──
+function renderMap(fn){
+  const fl=FLOORS[fn];
+  if(fl.adv){
+    document.getElementById('mapCont').innerHTML=`<div class="bellini-banner">
+      <div class="blogo">🏛️</div>
+      <div class="binf"><h3>Bellini AI College</h3>
+      <p>6th Floor is exclusively for <strong style="color:#4ade80">Bellini AI College</strong> advising, faculty offices, and program-specific rooms.<br>
+      <strong style="color:rgba(255,255,255,.7)">Not available for general student study.</strong> Please use Floors 1–5.</p></div>
+      <div class="btag">ADVISING ONLY</div>
+    </div>`;
+    document.getElementById('sdetail').innerHTML='<div class="pholder">This floor is reserved for Bellini AI College advising only.</div>';
     return;
   }
-  const noiseFilter=document.getElementById('noiseFilter').value;
-  const hidden=noiseFilter!=='all'&&fl.noise!==noiseFilter;
+  const nf=document.getElementById('nfilter').value;
+  const hidden=nf!=='all'&&fl.noise!==nf;
   const zones=[...new Set(fl.seats.map(s=>s.zone))];
   let html='';
   if(hidden){
-    html=`<div style="text-align:center;padding:30px;color:#aaa;font-size:13px">No seats match the noise filter on this floor.<br><span style="font-size:11px">This floor is <strong>${fl.noise}</strong> noise level.</span></div>`;
+    html=`<div class="pholder">No seats match the noise filter on this floor.<br><small>This floor is <strong>${fl.noise}</strong> noise level.</small></div>`;
   } else {
-    zones.forEach(zone=>{
-      html+=`<div class="zone-label">${zone}</div><div class="seats-grid">`;
-      fl.seats.filter(s=>s.zone===zone).forEach(s=>{
-        const st=getSeatState(s.id);
-        const isSel=selSeat&&selSeat.id===s.id;
-        html+=`<button class="seat-btn ${st}${isSel?' sel':''}" onclick="selectSeat('${s.id}')" ${st==='oc'?'disabled':''} title="${s.id}">
-          <span class="seat-icon">${ICONS[s.type]||'🪑'}</span>
-          <span class="seat-id">${s.id.split('-').slice(1).join('-')}</span>
+    zones.forEach(z=>{
+      html+=`<div class="zlabel">${z}</div><div class="sgrid">`;
+      fl.seats.filter(s=>s.zone===z).forEach(s=>{
+        const st=getState(s.id);
+        const sel=selSeat&&selSeat.id===s.id;
+        html+=`<button class="sbtn ${st}${sel?' sel':''}" onclick="selectSeat('${s.id}')" ${st==='oc'?'disabled':''} title="${s.id}">
+          <span class="sico">${ICONS[s.type]||'🪑'}</span>
+          <span class="sid">${s.id.split('-').slice(1).join('-')}</span>
         </button>`;
       });
       html+='</div>';
     });
   }
-  document.getElementById('mapContainer').innerHTML=html;
+  document.getElementById('mapCont').innerHTML=html;
 }
 
 function selectSeat(id){
@@ -654,155 +804,265 @@ function selectSeat(id){
   const seat=fl.seats.find(s=>s.id===id);
   if(!seat) return;
   selSeat=seat;renderMap(curFloor);
-  const st=getSeatState(id);
+  const st=getState(id);
   const isMine=st==='mine';
-  const res=reservations[id];
-  let timerHtml='';
-  if(isMine&&res){
-    const left=Math.max(0,res.exp-Date.now());
-    const pct=Math.round(left/SESSION_MS*100);
+  const r=res[id];
+  let timerH='';
+  if(isMine&&r){
+    const left=Math.max(0,r.exp-Date.now());
+    const pct=Math.round(left/S_MS*100);
     const mins=Math.floor(left/60000);
     const secs=Math.floor((left%60000)/1000);
-    const color=left<WARN_MS?'#dc2626':left<30*60000?'#d97706':'#006747';
-    timerHtml=`<div class="timer-wrap">
-      <div class="timer-labels"><span>Session time</span><span style="color:${color};font-weight:700">${mins}:${secs<10?'0':''}${secs} left</span></div>
-      <div class="timer-bar"><div class="timer-fill" style="width:${pct}%;background:${color}"></div></div>
+    const col=left<W_MS?'#dc2626':left<30*60000?'#d97706':'#006747';
+    timerH=`<div class="twrap">
+      <div class="tlbls"><span>Session time</span><span style="color:${col};font-weight:700">${mins}:${secs<10?'0':''}${secs} left</span></div>
+      <div class="tbar"><div class="tfill" style="width:${pct}%;background:${col}"></div></div>
     </div>`;
   }
   let actions='';
   if(st==='av') actions=`<button class="btn sm" onclick="reserveSeat('${id}')">Reserve this seat</button>`;
   else if(isMine) actions=`
-    ${res&&res.ext<2?`<button class="btn sm amber" onclick="extendSeat('${id}')">+30 min</button>`:''}
+    ${r&&r.ext<2?`<button class="btn sm amber" onclick="extendSeat('${id}')">+30 min</button>`:''}
     <button class="btn sm blue" onclick="showQR('${id}')">📱 QR checkout</button>
     <button class="btn sm red" onclick="checkoutSeat('${id}')">Check out</button>`;
-  const nearby=fl.seats.filter(s=>s.id!==id&&getSeatState(s.id)==='av').slice(0,3).map(s=>s.id).join(', ')||'None on this floor';
-  document.getElementById('seatDetail').innerHTML=`
+  const nearby=fl.seats.filter(s=>s.id!==id&&getState(s.id)==='av').slice(0,3).map(s=>s.id).join(', ')||'None on this floor';
+  document.getElementById('sdetail').innerHTML=`
     <h3>${seat.id}</h3>
-    <div class="floor-sub">${seat.zone} · ${curFloor}</div>
-    <div class="detail-grid">
-      <div class="detail-item"><div class="dl">Status</div><div class="dv"><span class="pill ${st}">${st==='mine'?'Your seat':st==='av'?'Available':'Occupied'}</span></div></div>
-      <div class="detail-item"><div class="dl">Type</div><div class="dv">${seat.type}</div></div>
-      <div class="detail-item"><div class="dl">Capacity</div><div class="dv">${seat.cap} person${seat.cap>1?'s':''}</div></div>
-      <div class="detail-item"><div class="dl">Charger</div><div class="dv">${seat.charger?'✅ Yes':'❌ No'}</div></div>
-      <div class="detail-item"><div class="dl">Noise level</div><div class="dv">${FLOORS[curFloor].noise}</div></div>
-      <div class="detail-item"><div class="dl">Nearby available</div><div class="dv" style="font-size:11px">${nearby}</div></div>
-    </div>
-    ${timerHtml}
-    <div class="action-btns">${actions}</div>`;
+    <div class="fsub">${seat.zone} · ${curFloor}</div>
+    <div class="dgrid">
+      <div class="di"><div class="dl">Status</div><div class="dv"><span class="pill ${st}">${st==='mine'?'Your seat':st==='av'?'Available':'Occupied'}</span></div></div>
+      <div class="di"><div class="dl">Type</div><div class="dv">${seat.type}</div></div>
+      <div class="di"><div class="dl">Capacity</div><div class="dv">${seat.cap} person${seat.cap>1?'s':''}</div></div>
+      <div class="di"><div class="dl">Charger</div><div class="dv">${seat.charger?'✅ Yes':'❌ No'}</div></div>
+      <div class="di"><div class="dl">Noise</div><div class="dv">${FLOORS[curFloor].noise}</div></div>
+      <div class="di"><div class="dl">Nearby free</div><div class="dv" style="font-size:11px">${nearby}</div></div>
+    </div>${timerH}
+    <div class="abtns">${actions}</div>`;
 }
 
 function reserveSeat(id){
   const seat=FLOORS[curFloor].seats.find(s=>s.id===id);
-  reservations[id]={uid:user.id,name:user.name,floor:curFloor,reservedAt:Date.now(),exp:Date.now()+SESSION_MS,ext:0};
+  const now=Date.now();
+  res[id]={uid:user.id,name:user.name,floor:curFloor,reservedAt:now,exp:now+S_MS,ext:0};
   selSeat=seat;
-  renderMap(curFloor);renderDashboard();renderReservations();selectSeat(id);
+  renderMap(curFloor);renderDashboard();renderReservations();renderFloorTabs();selectSeat(id);
 }
 
 function checkoutSeat(id){
-  delete reservations[id];warnShown[id]=false;selSeat=null;
-  document.getElementById('warnPopup').style.display='none';
-  renderMap(curFloor);renderDashboard();renderReservations();
-  document.getElementById('seatDetail').innerHTML='<div class="placeholder-detail">✅ Checked out! Seat is now available for others.</div>';
+  const r=res[id];
+  if(r&&r.uid===user.id){
+    const dur=Math.round((Date.now()-r.reservedAt)/60000);
+    addHistory({seat:id,floor:r.floor,checkin:new Date(r.reservedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+      checkout:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),duration:dur,date:new Date().toLocaleDateString()});
+  }
+  delete res[id];warnShown[id]=false;selSeat=null;
+  document.getElementById('warnPop').style.display='none';
+  renderMap(curFloor);renderDashboard();renderReservations();renderFloorTabs();
+  document.getElementById('sdetail').innerHTML='<div class="pholder">✅ Checked out! Seat is now available for others.</div>';
 }
 
 function extendSeat(id){
-  if(!reservations[id]||reservations[id].ext>=2) return;
-  reservations[id].exp+=EXTEND_MS;
-  reservations[id].ext++;
+  if(!res[id]||res[id].ext>=2) return;
+  res[id].exp+=E_MS;res[id].ext++;
   warnShown[id]=false;
-  document.getElementById('warnPopup').style.display='none';
+  document.getElementById('warnPop').style.display='none';
   selectSeat(id);renderReservations();
 }
 
+// ── QR ──
 function showQR(id){
-  warnSeatId=id;
+  warnId=id;
   const data='BULLSPACE|'+id+'|'+user.id+'|CHECKOUT';
-  document.getElementById('qrText').textContent=data;
+  document.getElementById('qrTxt').textContent=data;
   drawQR(data);
   document.getElementById('qrModal').style.display='flex';
 }
-
 function drawQR(data){
-  const canvas=document.getElementById('qrCanvas');
-  const ctx=canvas.getContext('2d');
-  const size=180,cells=21,cell=Math.floor(size/cells);
-  ctx.fillStyle='#fff';ctx.fillRect(0,0,size,size);
+  const cv=document.getElementById('qrCanvas');
+  const ctx=cv.getContext('2d');
+  const sz=180,cells=21,cell=Math.floor(sz/cells);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,sz,sz);
   ctx.fillStyle='#006747';
   const h=s=>{let v=0;for(let i=0;i<s.length;i++)v=(Math.imul(31,v)+s.charCodeAt(i))|0;return v;};
-  for(let r=0;r<cells;r++){for(let c=0;c<cells;c++){
+  for(let r=0;r<cells;r++)for(let c=0;c<cells;c++){
     const dark=Math.abs(h(data+r*37+c*13))%5<2||(r<7&&c<7)||(r<7&&c>cells-8)||(r>cells-8&&c<7);
     if(dark) ctx.fillRect(c*cell,r*cell,cell,cell);
-  }}
+  }
 }
-
 function closeQR(e){if(e.target===document.getElementById('qrModal'))document.getElementById('qrModal').style.display='none';}
 function simScan(){
   document.getElementById('qrModal').style.display='none';
-  if(warnSeatId) setTimeout(()=>{checkoutSeat(warnSeatId);alert('✅ QR scan successful! Seat '+warnSeatId+' has been released.');},500);
+  if(warnId) setTimeout(()=>{checkoutSeat(warnId);alert('✅ QR scan successful! Seat '+warnId+' released.');},500);
 }
 
-function extendFromWarn(){if(warnSeatId)extendSeat(warnSeatId);}
-function checkoutFromWarn(){if(warnSeatId)checkoutSeat(warnSeatId);}
-
+// ── WARN ──
+function extendFromWarn(){if(warnId)extendSeat(warnId);}
+function checkoutFromWarn(){if(warnId)checkoutSeat(warnId);}
 function checkWarnings(){
   if(!user) return;
-  Object.entries(reservations).forEach(([id,r])=>{
+  Object.entries(res).forEach(([id,r])=>{
     if(r.uid!==user.id) return;
     const left=r.exp-Date.now();
-    if(left>0&&left<=WARN_MS&&!warnShown[id]){
-      warnShown[id]=true;warnSeatId=id;
+    if(left>0&&left<=W_MS&&!warnShown[id]){
+      warnShown[id]=true;warnId=id;
       const mins=Math.floor(left/60000);
       document.getElementById('warnMsg').textContent='Seat '+id+' expires in '+mins+' minutes!';
-      const popup=document.getElementById('warnPopup');
-      popup.style.display='block';
-      document.getElementById('warnExtBtn').style.display=r.ext<2?'block':'none';
-      setTimeout(()=>{if(popup.style.display==='block')popup.style.display='none';},10000);
+      const pop=document.getElementById('warnPop');
+      pop.style.display='block';
+      document.getElementById('warnExt').style.display=r.ext<2?'block':'none';
+      setTimeout(()=>{if(pop.style.display==='block')pop.style.display='none';},10000);
     }
   });
 }
 
+// ── RESERVATIONS ──
 function renderReservations(){
-  const mine=Object.entries(reservations).filter(([id,r])=>r.uid===user.id&&Date.now()<r.exp);
+  const mine=Object.entries(res).filter(([id,r])=>r.uid===user.id&&Date.now()<r.exp);
   const el=document.getElementById('resList');
-  if(!mine.length){el.innerHTML='<div class="empty-res">🎫 No active reservations.<br><span style="font-size:12px">Go to the Seat Map tab to reserve a seat.</span></div>';return;}
+  if(!mine.length){el.innerHTML='<div class="empty">🎫 No active reservations.<br><small>Go to Seat Map to reserve a seat.</small></div>';return;}
   el.innerHTML=mine.map(([id,r])=>{
     const left=Math.max(0,r.exp-Date.now());
-    const pct=Math.round(left/SESSION_MS*100);
+    const pct=Math.round(left/S_MS*100);
     const mins=Math.floor(left/60000);
     const secs=Math.floor((left%60000)/1000);
-    const color=left<WARN_MS?'#dc2626':left<30*60000?'#d97706':'#006747';
-    return `<div class="res-card">
-      <div class="rh"><div><div class="rid">${id}</div><div class="rfloor">${r.floor} · Checked in ${new Date(r.reservedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div></div><span class="pill mine">Active</span></div>
-      <div class="timer-wrap">
-        <div class="timer-labels"><span>Time remaining</span><span style="color:${color};font-weight:700">${mins}:${secs<10?'0':''}${secs}</span></div>
-        <div class="timer-bar"><div class="timer-fill" style="width:${pct}%;background:${color}"></div></div>
+    const col=left<W_MS?'#dc2626':left<30*60000?'#d97706':'#006747';
+    return `<div class="rcard">
+      <div class="rh"><div><div class="rid">${id}</div><div class="rfl">${r.floor} · In at ${new Date(r.reservedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div></div><span class="pill active">Active</span></div>
+      <div class="twrap">
+        <div class="tlbls"><span>Time remaining</span><span style="color:${col};font-weight:700">${mins}:${secs<10?'0':''}${secs}</span></div>
+        <div class="tbar"><div class="tfill" style="width:${pct}%;background:${col}"></div></div>
       </div>
-      <div class="res-actions">
-        ${r.ext<2?`<button class="btn sm amber" onclick="extendSeat('${id}')">+30 min (${2-r.ext} left)</button>`:'<span style="font-size:12px;color:#888">Max extensions used</span>'}
-        <button class="btn sm blue" onclick="showQR('${id}')">📱 QR checkout</button>
+      <div class="ract">
+        ${r.ext<2?`<button class="btn sm amber" onclick="extendSeat('${id}')">+30 min (${2-r.ext} left)</button>`:'<span style="font-size:11px;color:#888">Max extensions used</span>'}
+        <button class="btn sm blue" onclick="showQR('${id}')">📱 QR</button>
         <button class="btn sm red" onclick="checkoutSeat('${id}')">Check out</button>
       </div>
     </div>`;
   }).join('');
 }
 
+// ── STUDY GROUPS ──
+function postGroup(){
+  const subj=document.getElementById('sgSubj').value.trim();
+  const floor=document.getElementById('sgFloor').value;
+  const time=document.getElementById('sgTime').value.trim();
+  const spots=parseInt(document.getElementById('sgSpots').value)||2;
+  const desc=document.getElementById('sgDesc').value.trim();
+  if(!subj||!floor||!time){alert('Please fill in subject, floor, and time.');return;}
+  studyGroups.unshift({
+    id:Date.now(),subject:subj,floor,time,spots,desc,
+    poster:user.name,posterId:user.id,
+    postedAt:Date.now(),joined:[],
+    exp:Date.now()+3*60*60*1000
+  });
+  document.getElementById('sgSubj').value='';
+  document.getElementById('sgFloor').value='';
+  document.getElementById('sgTime').value='';
+  document.getElementById('sgSpots').value='';
+  document.getElementById('sgDesc').value='';
+  renderGroups();
+}
+function joinGroup(id){
+  const g=studyGroups.find(g=>g.id===id);
+  if(!g||g.joined.includes(user.id)) return;
+  g.joined.push(user.id);
+  renderGroups();
+}
+function renderGroups(){
+  const active=studyGroups.filter(g=>Date.now()<g.exp);
+  const el=document.getElementById('sgList');
+  if(!active.length){el.innerHTML='<div class="empty">👥 No study groups posted yet.<br><small>Be the first to post one above!</small></div>';return;}
+  el.innerHTML=active.map(g=>{
+    const spotsLeft=g.spots-g.joined.length;
+    const isJoined=g.joined.includes(user.id);
+    const isMine=g.posterId===user.id;
+    const ago=Math.round((Date.now()-g.postedAt)/60000);
+    const agoStr=ago<1?'just now':ago+'m ago';
+    return `<div class="sgcard">
+      <div class="sgtop">
+        <div>
+          <div class="sgsubj">📚 ${g.subject}</div>
+          <div class="sgmeta">📍 ${g.floor} · 🕐 ${g.time} · Posted by ${isMine?'you':g.poster}</div>
+        </div>
+        <span class="spots-badge">${spotsLeft} spot${spotsLeft!==1?'s':''} left</span>
+      </div>
+      ${g.desc?`<div class="sgdesc">${g.desc}</div>`:''}
+      <div class="sgfoot">
+        <span class="sgtime">${agoStr}</span>
+        ${isMine?`<button class="join-btn joined" disabled>Your group</button>`:
+          isJoined?`<button class="join-btn joined" disabled>✓ Joined</button>`:
+          spotsLeft>0?`<button class="join-btn" onclick="joinGroup(${g.id})">Join group</button>`:
+          `<button class="join-btn joined" disabled>Full</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── TUTORING ──
+function renderTutoring(){
+  const subjF=document.getElementById('taSubjFilter').value;
+  const dayF=document.getElementById('taDayFilter').value;
+  const today=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];
+  const filtered=TA_DATA.filter(ta=>{
+    if(subjF!=='all'&&ta.subject!==subjF) return false;
+    if(dayF!=='all'&&!ta.days.includes(dayF)) return false;
+    return true;
+  });
+  const el=document.getElementById('taList');
+  if(!filtered.length){el.innerHTML='<div class="empty">No tutors match the selected filters.</div>';return;}
+  const subIcons={Mathematics:'🔢',Chemistry:'⚗️',Physics:'⚡',Biology:'🧬',
+    Writing:'✍️','Computer Science':'💻',Economics:'📈',Statistics:'📊'};
+  el.innerHTML=filtered.map(ta=>{
+    const isToday=ta.days.includes(today);
+    return `<div class="tarow">
+      <div class="taico">${subIcons[ta.subject]||'📚'}</div>
+      <div class="tainf">
+        <div class="taname">${ta.name}</div>
+        <div class="tasub">${ta.subject}</div>
+        <div class="tadays">${ta.days.join(', ')} · ${ta.start} – ${ta.end}</div>
+        <div class="tadays" style="margin-top:2px">📍 ${ta.location}</div>
+      </div>
+      <div>
+        <span class="tastatus ${ta.status}">${ta.status==='free'?'✓ Available':'✗ Unavailable'}</span>
+        ${isToday?'<div style="font-size:10px;color:#006747;font-weight:600;margin-top:4px;text-align:center">Today</div>':''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── HISTORY ──
+function renderHistory(){
+  const h=getHistory();
+  const el=document.getElementById('histList');
+  if(!h.length){el.innerHTML='<div style="text-align:center;padding:20px;color:#aaa;font-size:13px">No session history yet.<br><small>Reserve a seat to start tracking.</small></div>';return;}
+  el.innerHTML=h.map(e=>`<div class="hrow">
+    <div class="hico">🪑</div>
+    <div class="hinfo">
+      <div class="hid">${e.seat} · ${e.floor}</div>
+      <div class="hmeta">${e.date} · In: ${e.checkin} · Out: ${e.checkout}</div>
+    </div>
+    <div class="hdur">${e.duration} min</div>
+  </div>`).join('');
+}
+
+// ── CHAT ──
 async function sendMsg(){
-  const input=document.getElementById('msgInput');
+  const inp=document.getElementById('msgIn');
   const btn=document.getElementById('sendBtn');
-  const text=input.value.trim();
+  const text=inp.value.trim();
   if(!text) return;
-  input.value='';btn.disabled=true;
+  inp.value='';btn.disabled=true;
   addMsg(text,'user');
   const typing=addMsg('BullSpace AI is thinking...','bot typing');
   try{
-    const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:user.id,message:text})});
-    const data=await res.json();
+    const r=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({student_id:user.id,message:text})});
+    const data=await r.json();
     typing.remove();addMsg(data.response,'bot');
   }catch(e){typing.remove();addMsg('Sorry, something went wrong. Please try again in a moment.','bot');}
-  btn.disabled=false;input.focus();
+  btn.disabled=false;inp.focus();
 }
-
-function sendSug(text){document.getElementById('msgInput').value=text;sendMsg();}
+function ss(text){document.getElementById('msgIn').value=text;sendMsg();}
 function addMsg(text,cls){
   const area=document.getElementById('chatArea');
   const div=document.createElement('div');
@@ -810,12 +1070,22 @@ function addMsg(text,cls){
   area.appendChild(div);area.scrollTop=area.scrollHeight;return div;
 }
 
+// ── TICK ──
 setInterval(()=>{
   if(!user) return;
   renderReservations();
   if(selSeat) selectSeat(selSeat.id);
   checkWarnings();renderDashboard();
+  renderFloorTabs();
 },1000);
+
+// expire old study groups every minute
+setInterval(()=>{
+  if(!user) return;
+  const before=studyGroups.length;
+  studyGroups=studyGroups.filter(g=>Date.now()<g.exp);
+  if(studyGroups.length!==before) renderGroups();
+},60000);
 </script>
 </body>
 </html>
