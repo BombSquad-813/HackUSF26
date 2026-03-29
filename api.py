@@ -61,9 +61,14 @@ async def chat(req: ChatRequest):
 
         return {"response": reply, "student_id": req.student_id}
 
+    
     except Exception as e:
-        return {"response": f"Sorry, I ran into an issue: {str(e)}", "student_id": req.student_id}
-
+        error_str = str(e)
+        if "rate_limit" in error_str or "Rate limit" in error_str:
+            return {"response": "I'm getting a lot of requests right now! Please wait 10 seconds and try again. 🐂", "student_id": req.student_id}
+        return {"response": f"Sorry, I ran into an issue. Please try again in a moment!", "student_id": req.student_id}
+    
+    
 @app.get("/")
 def root():
     return FileResponse("index.html")
