@@ -652,7 +652,20 @@ function clearHistory(){lsSet('bs_history_'+(user?.id||''),[]);renderHistory();}
 
 // ── OCC ──
 function rndOcc(){return Math.random()<0.35;}
-function initOcc(){Object.values(FLOORS).forEach(f=>{if(!f.adv)f.seats.forEach(s=>{if(!occ[s.id])occ[s.id]=rndOcc();});});}
+async function initOcc(){
+  try{
+    for(let floor=1;floor<=5;floor++){
+      const res=await fetch(`https://libraryspot.onrender.com/api/seats?floor=${floor}`);
+      if(!res.ok) throw new Error('API error');
+      const seats=await res.json();
+      seats.forEach(s=>{ occ[s.id]=s.status==='taken'; });
+    }
+    console.log('Live seat data loaded from LibrarySpot');
+  }catch(e){
+    console.log('LibrarySpot offline, using simulation');
+    Object.values(FLOORS).forEach(f=>{if(!f.adv)f.seats.forEach(s=>{if(!occ[s.id])occ[s.id]=rndOcc();});});
+  }
+}
 function getState(id){
   if(res[id]){
     if(Date.now()>res[id].exp){delete res[id];return 'av';}
@@ -844,7 +857,13 @@ function reserveSeat(id){
   const seat=FLOORS[curFloor].seats.find(s=>s.id===id);
   const now=Date.now();
   res[id]={uid:user.id,name:user.name,floor:curFloor,reservedAt:now,exp:now+S_MS,ext:0};
+  occ[id]=true;
   selSeat=seat;
+  fetch('https://libraryspot.onrender.com/api/seats/reserve',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+(lsGet('ls_token')||'')},
+    body:JSON.stringify({seatId:id})
+  }).catch(()=>{});
   renderMap(curFloor);renderDashboard();renderReservations();renderFloorTabs();selectSeat(id);
 }
 
@@ -855,7 +874,11 @@ function checkoutSeat(id){
     addHistory({seat:id,floor:r.floor,checkin:new Date(r.reservedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
       checkout:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),duration:dur,date:new Date().toLocaleDateString()});
   }
-  delete res[id];warnShown[id]=false;selSeat=null;
+  delete res[id];occ[id]=false;warnShown[id]=false;selSeat=null;
+  fetch('https://libraryspot.onrender.com/api/seats/leave',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+(lsGet('ls_token')||'')}
+  }).catch(()=>{});
   document.getElementById('warnPop').style.display='none';
   renderMap(curFloor);renderDashboard();renderReservations();renderFloorTabs();
   document.getElementById('sdetail').innerHTML='<div class="pholder">✅ Checked out! Seat is now available for others.</div>';
@@ -1086,79 +1109,6 @@ setInterval(()=>{
   studyGroups=studyGroups.filter(g=>Date.now()<g.exp);
   if(studyGroups.length!==before) renderGroups();
 },60000);
-</script>
-<!-- Seat Map Toggle Button -->
-<button id="seat-map-toggle" onclick="toggleSeatMap()" style="
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  background: #1a5c38;
-  color: white;
-  border: none;
-  border-radius: 50px;
-  padding: 12px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-">
-  🪑 Find a Seat
-</button>
-
-<!-- Seat Map Panel -->
-<div id="seat-map-panel" style="
-  display: none;
-  position: fixed;
-  bottom: 80px;
-  right: 24px;
-  width: 900px;
-  height: 600px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.25);
-  z-index: 999;
-  overflow: hidden;
-  border: 1.5px solid #d0d0d0;
-">
-  <div style="
-    background: #1a5c38;
-    color: white;
-    padding: 14px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  ">
-    <span style="font-weight: 600; font-size: 15px;">🪑 LibrarySpot — Live Seat Map</span>
-    <button onclick="toggleSeatMap()" style="
-      background: rgba(255,255,255,0.15);
-      border: none; color: white;
-      border-radius: 6px;
-      padding: 4px 10px;
-      cursor: pointer;
-      font-size: 13px;
-    ">✕ Close</button>
-  </div>
-
-  <iframe
-    src="https://libraryspot.onrender.com"
-    style="width: 100%; height: calc(100% - 48px); border: none;"
-    title="LibrarySpot Seat Map"
-  ></iframe>
-</div>
-
-<script>
-  let seatMapOpen = false;
-  function toggleSeatMap() {
-    seatMapOpen = !seatMapOpen;
-    const panel = document.getElementById('seat-map-panel');
-    const btn = document.getElementById('seat-map-toggle');
-    panel.style.display = seatMapOpen ? 'block' : 'none';
-    btn.innerHTML = seatMapOpen ? '✕ Close Map' : '🪑 Find a Seat';
-  }
 </script>
 </body>
 </html>
